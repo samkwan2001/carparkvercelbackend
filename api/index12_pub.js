@@ -16,7 +16,7 @@ let predicted_moved_time=0;
 // app.use(cors());
 app.use(cors({
   origin: [
-    'https://carparktest3frontend.vercel.app', // 換成你Vercel前端網址
+    'https://carparktestfrontend-fork.vercel.app', // 換成你Vercel前端網址
     'http://localhost:3000', // 測試用
     'http://192.168.31.18:3000', // 測試用
     'http://192.168.137.1:3000', // 測試用
@@ -28,8 +28,8 @@ app.use(cors({
 app.use(express.json());
 
 // 資料庫連接資訊
-const url = 'mongodb://localhost:27017/';
-// const url = process.env.MONGODB_URI;
+// const url = 'mongodb://localhost:27017/';
+const url = process.env.MONGODB_URI;
 
 const dbName = 'carpark';
 const collectionName = 'carparkcollection';
