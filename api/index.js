@@ -118,7 +118,7 @@ function reload_all_client(exception=void 0,_id=void 0) {
   return count;
 }
 function send_to_client(event,data,_id=void 0) {
-  console.log("rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr");
+  console.log("ssssssssssssssssssssssssssssssssssss");
   let count=0;
   clients.forEach(async(client) => {
     // console.log(client)
@@ -216,7 +216,7 @@ app.get('/events', (req, res) => {console.log("get /events :"+req.url);
   if(Date.now() - last_queue_shift < 1000){
     // reload_all_client()
       res.write("event: message\n");
-      res.write("data:" + "reload" + "\n\n");
+      res.write("data:" + "fetchData" + "\n\n");
   }
 });
 app.get('/admin_debug_events', (req, res) => {console.log("get /admin_debug_events :"+req.url);
@@ -864,6 +864,7 @@ app.post("/register", async (req, resp) => {const log = false;
   // if(log)console.log(req);
   var params = new URLSearchParams(req.url.split("?")[1]);
   if (log) console.log(params);
+  let docsInserted;
   try {
     let objectToInsert = {};
     params.forEach(function (part, index, theArray) {
@@ -879,7 +880,7 @@ app.post("/register", async (req, resp) => {const log = false;
     )return;
     const result = await collection.insertOne(objectToInsert);
     if (log) console.log(result);
-    const docsInserted = result.insertedId;
+    docsInserted = result.insertedId;
     if (log) console.log("docsInserted:" + docsInserted);
     resp.send(docsInserted);
     reload_admin()
@@ -893,6 +894,36 @@ app.post("/register", async (req, resp) => {const log = false;
       resp.status(500).send(err);
     }
   }
+  
+  setTimeout(async()=>{
+    console.log("Timeout");
+    for(let i = 0; i < clients.length; i++){
+      console.log(clients[i]["_id"],docsInserted,clients[i]["_id"]==docsInserted)
+      if(clients[i]["_id"]==docsInserted)return;
+    }
+    const limit = 1
+    let sort = { "start time": -1 }
+    const crr_cursor = collection.find(
+      {
+        "_id": new ObjectId(_id),
+      }, { sort, limit }
+    )
+    const crr_rows = await crr_cursor.toArray()
+    console.log("close_rows")
+    console.log(crr_rows)
+    const crr_user = crr_rows[0]
+    if(
+      /**/crr_user/**/                  !==void 0
+      &&  crr_user["Parking Space Num"] !==void 0
+      &&  crr_user["charge duration"]   ===void 0
+      &&  crr_user["start time"]        ===void 0
+    ){
+      console.log("deletedeletedeletedeletedeletedeletedeletedeletedeletedeletedeletedeletedeletedelete")
+      console.log(async_id_symbol);
+      reload_admin(_id);
+      collection.deleteOne({"_id": new ObjectId(_id)});
+    }
+  },10000);
 });
 
 
