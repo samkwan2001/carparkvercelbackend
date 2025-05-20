@@ -226,7 +226,7 @@ app.get('/events', (req, res) => {console.log("get /events :"+req.url);
         &&  ${crr_user["start time"]        ===void 0}
         `)
     }
-  });
+  };
 
 
 
