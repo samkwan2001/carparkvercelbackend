@@ -53,6 +53,23 @@ function clearIntervals(Intervals=[]){
     }
   }
 };
+let console_log_res = void 0;
+log = console.log;
+console.log = (...data) => {
+    if (console_log_res !== void 0 && !console_log_res.destroyed) {
+        console_log_res.write("event: message\n");
+        console_log_res.write("data:" + (data.join(" ")) + "\n\n");
+    }
+    log(data.join(" "));
+};
+app.get("/console", (req, res) => {
+    console.log(req.url);
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    console_log_res = res;
+});
+
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
