@@ -183,8 +183,9 @@ app.get('/events', (req, res) => {console.log("get /events :"+req.url);
   console.log(clients.length);
   fs.writeFile('.count.json', String(clients.length), 'utf8',()=>{});
   const _id=urlparams.get("_id").replaceAll("\"", "")
-  const handle_close=async()=> {
+  const handle_close=async(...args)=> {
     console.log("closeclclclclclclclclclclclclclclcl");
+    console.log(args);
     for(let i=0; i<clients.length;i++){
       if(clients[i].res.destroyed)
         clients.splice(i,1);
@@ -233,6 +234,9 @@ app.get('/events', (req, res) => {console.log("get /events :"+req.url);
 req.on("close",handle_close);
 req.on("end",handle_close);
 req.on("aborted",handle_close);
+const close_url=`close_${_id}`;
+console.log(close_url);
+app.get(close_url,handle_close);
   reload_admin()
   // res.write("event: message\n");
   // res.write("data:" + "reload" + "\n\n");
