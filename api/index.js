@@ -64,6 +64,7 @@ console.log = (...data) => {
 };
 app.get("/console", (req, res) => {
     console.log(req.url);
+    res.setHeader("Access-Control-Allow-Origin","*");
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
@@ -156,6 +157,7 @@ function send_to_client(event,data,_id=void 0) {
 }
 let last_queue_shift=0;
 app.get('/events', (req, res) => {console.log("get /events :"+req.url);
+  res.setHeader("Access-Control-Allow-Origin","*");
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
@@ -247,6 +249,7 @@ app.get(close_url,handle_close);
   }
 });
 app.get('/admin_debug_events', (req, res) => {console.log("get /admin_debug_events :"+req.url);
+  res.setHeader("Access-Control-Allow-Origin","*");
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
@@ -314,6 +317,7 @@ app.get("/admin_debug_fetch",async(req,res)=>{console.log("get /admin_debug_fetc
 let last_event_data={}
 let index_loc_res=void 0;
 app.get("/index_pub/event", (req, res)=>{console.log(req.url);
+  res.setHeader("Access-Control-Allow-Origin","*");
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
