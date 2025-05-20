@@ -234,7 +234,7 @@ app.get('/events', (req, res) => {console.log("get /events :"+req.url);
 req.on("close",handle_close);
 req.on("end",handle_close);
 req.on("aborted",handle_close);
-const close_url=`close_${_id}`;
+const close_url=`/close_${_id}`;
 console.log(close_url);
 app.get(close_url,handle_close);
   reload_admin()
