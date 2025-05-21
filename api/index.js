@@ -179,8 +179,9 @@ app.get('/events', (req, res) => {console.log("get /events :"+req.url);
   clients.push({"_id":urlparams.get("_id").replaceAll("\"", ""),"async_id_symbol" : async_id_symbol, "res": res});
   console.log(({"_id":urlparams.get("_id").replaceAll("\"", ""),"async_id_symbol" : async_id_symbol}));
   for(let i=0; i<clients.length;i++){
-    if(clients[i].res.destroyed)
-      clients.splice(i,1);
+    if(clients[i].res.destroyed){
+      clients.splice(i,1);break;
+    }
   }
   console.log(clients.length);
   fs.writeFile('.count.json', String(clients.length), 'utf8',()=>{});
@@ -188,9 +189,12 @@ app.get('/events', (req, res) => {console.log("get /events :"+req.url);
   const handle_close=async(...args)=> {
     console.log("closeclclclclclclclclclclclclclclcl");
     console.log(args);
+    if(args[1])args[1].send("ok");
     for(let i=0; i<clients.length;i++){
-      if(clients[i].res.destroyed)
-        clients.splice(i,1);
+      if(clients[i].res.destroyed){
+        clients.splice(i,1);break;
+      }
+      if(args[0]&&args[0].url&&args[0].url.replace(/\/close_/,"")==clients[i]._id)clients[i].res.end();
     }
     console.log(clients.length);
     fs.writeFile('.count.json', String(clients.length), 'utf8',()=>{});
