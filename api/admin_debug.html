@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- <script src="https://www.kryogenix.org/code/browser/sorttable/sorttable_loader.php?t=1747861980921"></script> -->
+    <script src="/sorttable.js"></script>
+    <title>Admin Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            border: 1px solid #ccc;
+            text-align: left;
+        }
+
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+
+        /*tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }*/
+        .highlight {
+            background-color: #90ee90;
+            /* Light green */
+        }
+
+        .highlight-red {
+            background-color: #ffcccb;
+            /* Light red */
+        }
+
+        /*table tr td { color: #777; }
+        table tbody tr:nth-child(2n) td {
+        background: #ffcccc;
+        }
+        table tbody tr:nth-child(2n+1) td {
+        background: #ccffff;
+        }*/
+    </style>
+</head>
+
+<body>
+    <h1>Admin Debug - Parking Data</h1>
+    <!-- <script src="https://www.kryogenix.org/code/browser/sorttable/sorttable_loader.php?t=1747861980921"></script> -->
+    <!-- <script src="/sorttable.js"></script> -->
+    <table id="parkingData" class="sortable">
+        <thead>
+            <tr>
+                <!-- <th>_id</th>
+                <th>Parking Space Num</th>
+                <th>Charge Duration</th>
+                <th>Start Time</th> -->
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Data will be inserted here -->
+        </tbody>
+    </table>
+    <div id="values">
+        <div>
+            <script>
+                function diff(obj1, obj2) {
+                    const result = {};
+                    if (Object.is(obj1, obj2)) {
+                        return undefined;
+                    }
+                    if (!obj2 || typeof obj2 !== 'object') {
+                        return obj2;
+                    }
+                    Object.keys(obj1 || {}).concat(Object.keys(obj2 || {})).forEach(key => {
+                        if (obj2[key] !== obj1[key] && !Object.is(obj1[key], obj2[key])) {
+                            result[key] = obj2[key];
+                        }
+                        if (typeof obj2[key] === 'object' && typeof obj1[key] === 'object') {
+                            const value = diff(obj1[key], obj2[key]);
+                            if (value !== undefined) {
+                                result[key] = value;
+                            }
+                        }
+                    });
+                    return result;
+                }
+                function tableToJson(table) {
+                    const rows = table.querySelectorAll("tr");
+                    const headers = Array.from(rows[0].querySelectorAll("th")).map(th => th.textContent.trim());
+
+                    return Array.from(rows).slice(1).map(row => {
+                        const cells = row.querySelectorAll("td");
+                        return headers.reduce((obj, header, i) => {
+                            obj[header] = cells[i].textContent.trim();
+                            return obj;
+                        }, {});
+                    });
+                }
+
+                // Example usage:
+                const table = document.getElementById('parkingData');
+                const json = tableToJson(table);
+                console.log(JSON.stringify(json, null, 2));
+
+                const tbody = document.getElementById('parkingData').querySelector('tbody');
+                const thead = document.getElementById('parkingData').querySelector('thead');
+                async function fetchData(event = void 0) {
+                    const response = await fetch('/admin_debug_fetch');
+                    const data = await response.json();
+                    // let data = [
+                    //     {
+                    //         "_id": "a1b1c1d1e1",
+                    //         "Parking Space Num": 1,
+                    //         "Charge Duration": 15,
+                    //         "Start Time": '2025-05-21T20:01:18.376Z',
+                    //     },
+                    //     {
+                    //         "_id": "a1b1c1d1e2",
+                    //         "Parking Space Num": 1,
+                    //         "Charge Duration": 15,
+                    //         "Start Time": '2025-05-21T20:01:18.376Z',
+                    //     },
+                    // ]
+                    const _id_data = {}; {
+                        data.forEach((value, index) => {
+                            const str_value = {};
+                            Object.keys(value).forEach((v) => {
+                                str_value[v] = String(value[v])
+                            });
+                            _id_data[value["_id"]] = str_value;
+                        });
+                    };
+                    const pdata = (tableToJson(document.getElementById('parkingData')));
+                    const _id_pdata = {}; {
+                        pdata.forEach((value, index) => {
+                            _id_pdata[value["_id"]] = value;
+                        });
+                    };
+                    const new_data = (diff(_id_pdata, _id_data))
+                    thead.innerHTML = '';
+                    let tkeys = []; {
+                        if (data.length > 0) {
+                            const tr = document.createElement('tr');
+                            for (let i = 0; i < data.length; i++)
+                                Object.keys(data[i]).forEach(key => {
+                                    const th = document.createElement("th");
+                                    //console.log(key);
+                                    if (tkeys.indexOf(key) == -1) {
+                                        th.id = key;
+                                        th.textContent = key;
+                                        tr.appendChild(th);
+                                        tkeys.push(key);
+                                    }
+                                });
+                            thead.appendChild(tr);
+                        }
+                    }
+
+                    console.log(new_data)
+                    Object.keys(new_data).forEach((k) => {
+                        const row = new_data[k]
+                        row._id = k;
+                        let tr = document.getElementById(row._id);
+                        if (!tr) {
+                            tr = document.createElement('tr');
+                            tr.id = row._id;
+                            tr.classList.add("item");
+                            tr.classList.add("client");
+                            tbody.appendChild(tr);
+                        }
+                        tkeys.forEach((key) => {
+                            let need_highlight = false;
+                            let td = document.getElementById(key + "(" + row._id + ")");
+                            if (!td) {
+                                td = document.createElement("td");
+                                td.id = key + "(" + row._id + ")";
+                                tr.appendChild(td);
+                                need_highlight = true;
+                            }
+                            if (row[key] !== void 0) {
+                                td.textContent = row[key];
+                                if (td.classList.contains("empty"))
+                                    need_highlight = true;
+                            }
+                            else { td.classList.add("empty") }
+                            if (need_highlight) {
+                                tr.classList.add('highlight'); // 新行標記為綠色
+                                setTimeout(() => {
+                                    tr.classList.remove('highlight');
+                                }, 1000); // 1秒後移除綠色標記
+                            }
+                        })
+                        // // tbody.appendChild(tr);
+                        // tr.classList.add('highlight'); // 新行標記為綠色
+                        // setTimeout(() => {
+                        //     tr.classList.remove('highlight');
+                        // }, 1000); // 1秒後移除綠色標記
+                    });
+                    sorttable.makeSortable(table);
+                    document.getElementById('_id').click();
+                    document.getElementById('_id').click();
+                };
+
+                eventSource = new EventSource("/admin_debug_events");
+                eventSource.onmessage = fetchData;
+                fetchData();
+                // setTimeout(fetchData, 1000);
+            </script>
+</body>
+
+</html>
