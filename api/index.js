@@ -359,10 +359,12 @@ app.get("/index_loc/push", (req, res)=>{const log=true;
   res.send("OK");
 })
 app.get("/admin_debug.html",(req,res)=>{console.log("get /admin_debug :"+req.url);
-  fs.readFile(path.join(__dirname, '..admin_debug.html'),(...a)=>{res.send(a[1].toString("utf-8"))});
+  // fs.readFile(path.join(__dirname, '..admin_debug.html'),(...a)=>{res.send(a[1].toString("utf-8"))});
+	res.send(process.env.admin_debug_html);
 }); 
 app.get("/sorttable.js",(req,res)=>{console.log("get /admin_debug :"+req.url);
-  res.sendFile(path.join(__dirname, 'sorttable.js'));
+  // res.sendFile(path.join(__dirname, 'sorttable.js'));
+	res.send(process.env.sorttable_js);
 }); 
 app.get("/qr",(req,res)=>{
   res.send(`<div id=\"qr-code\"></div>
