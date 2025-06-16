@@ -45,12 +45,20 @@ const not_this_user = 4;
 let timer = setInterval(async () => {
   clearInterval(timer);
 }, 0);
-function clearIntervals(Intervals=[]){
-  for(let i = 0;i<Intervals.length;i++){
-    if(!Intervals[i].destroyed){
-      clearInterval(Intervals[i]);
+function clearIntervals(Intervals = []) {
+    // console.log("Intervals:",Intervals.length);
+    // for (let i = 0; i < Intervals.length; i++) {
+    //     // console.log(Intervals[i])
+    //     if (!Intervals[i]._destroyed) {
+    //         clearInterval(Intervals[i]);
+    //     }
+    // }
+    for (let i =Intervals.length-1; i >= 0; i--) {
+        if (Intervals[i]&&!Intervals[i]._destroyed) {
+            clearInterval(Intervals[i]);
+            Intervals.splice(i, 1);
+        }
     }
-  }
 };
 let console_log_res = void 0;
 log = console.log;
