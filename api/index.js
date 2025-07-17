@@ -259,8 +259,9 @@ app.get('/events', (req, res) => {console.log("get /events :"+req.url);
       res.write("data:" + "fetchData" + "\n\n");
   }
 });
-app.get("/close/*",async(req,res)=>{
-    const _id = req.params[0];
+app.get("/close",async(req,res)=>{
+    let urlparams = new URLSearchParams(req.url.split("?")[1]);
+    const _id=urlparams.get("_id").replaceAll("\"", "")
     console.log("closeclclclclclclclclclclclclclclcl");
     console.log(args);
     if(args[1])args[1].send("ok");
