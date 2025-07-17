@@ -76,6 +76,9 @@ app.get("/console", (req, res) => {
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     console_log_res = res;
+    let interval=setInterval(()=>{
+        res.write(": keep connect comment",(e)=>{if(e)clearInterval(interval)});
+  },60000);
 });
 
 function sleep(ms) {
@@ -184,7 +187,7 @@ app.get('/events', (req, res) => {console.log("get /events :"+req.url);
   else if(user_agent.indexOf("Chrome")>=0)console.log("Chrome");
   console.log(async_id_symbol)
   let interval=setInterval(()=>{
-    res.write(": keep connect comment");
+    res.write(": keep connect comment",(e)=>{if(e)clearInterval(interval)});
   },60000);
   clients.push({"_id":urlparams.get("_id").replaceAll("\"", ""),"async_id_symbol" : async_id_symbol, "res": res, "interval":interval});
   console.log(({"_id":urlparams.get("_id").replaceAll("\"", ""),"async_id_symbol" : async_id_symbol}));
@@ -259,17 +262,17 @@ app.get('/events', (req, res) => {console.log("get /events :"+req.url);
       res.write("data:" + "fetchData" + "\n\n");
   }
 });
-app.get("/close",async(req,res)=>{
+app.get("/close",async(req,res)=>{console.log(req.url);
     let urlparams = new URLSearchParams(req.url.split("?")[1]);
     const _id=urlparams.get("_id").replaceAll("\"", "")
     console.log("closeclclclclclclclclclclclclclclcl");
-    console.log(args);
-    if(args[1])args[1].send("ok");
+    console.log(_id);
+    if(res)res.send("ok");
     for(let i=0; i<clients.length;i++){
       if(clients[i].res.destroyed){
         clients.splice(i,1);break;
       }
-      if(args[0]&&args[0].url&&args[0].url.replace(/\/close_/,"")==clients[i]._id)clients[i].res.end();
+    //   if(req&&req.url&&req.url.replace(/\/close_/,"")==clients[i]._id)clients[i].res.end();
     }
     console.log(clients.length);
     fs.writeFile('.count.json', String(clients.length), 'utf8',()=>{});
