@@ -259,7 +259,7 @@ app.get('/events', (req, res) => {console.log("get /events :"+req.url);
       res.write("data:" + "fetchData" + "\n\n");
   }
 });
-app.get("/close_*",async(req,res)=>{
+app.get("/close/*",async(req,res)=>{
     const _id = req.params[0];
     console.log("closeclclclclclclclclclclclclclclcl");
     console.log(args);
