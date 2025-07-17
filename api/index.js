@@ -183,7 +183,10 @@ app.get('/events', (req, res) => {console.log("get /events :"+req.url);
   else if(user_agent.indexOf("Firefox")>=0)console.log("Firefox");
   else if(user_agent.indexOf("Chrome")>=0)console.log("Chrome");
   console.log(async_id_symbol)
-  clients.push({"_id":urlparams.get("_id").replaceAll("\"", ""),"async_id_symbol" : async_id_symbol, "res": res});
+  let interval=setInterval(()=>{
+    res.write(": keep connect comment");
+  },60000);
+  clients.push({"_id":urlparams.get("_id").replaceAll("\"", ""),"async_id_symbol" : async_id_symbol, "res": res, "interval":interval});
   console.log(({"_id":urlparams.get("_id").replaceAll("\"", ""),"async_id_symbol" : async_id_symbol}));
   for(let i=0; i<clients.length;i++){
     if(clients[i].res.destroyed){
@@ -244,13 +247,10 @@ app.get('/events', (req, res) => {console.log("get /events :"+req.url);
 
 
 
-req.on("close",handle_close);
-req.on("end",handle_close);
-req.on("aborted",handle_close);
-const close_url=`/close_${_id}`;
-console.log(close_url);
-app.get(close_url,handle_close);
-  reload_admin()
+    req.on("close",handle_close);
+    req.on("end",handle_close);
+    req.on("aborted",handle_close);
+    reload_admin()
   // res.write("event: message\n");
   // res.write("data:" + "reload" + "\n\n");
   if(Date.now() - last_queue_shift < 1000){
@@ -258,6 +258,55 @@ app.get(close_url,handle_close);
       res.write("event: message\n");
       res.write("data:" + "fetchData" + "\n\n");
   }
+});
+app.get("/close_*",async(req,res)=>{
+    const _id = req.params[0];
+    console.log("closeclclclclclclclclclclclclclclcl");
+    console.log(args);
+    if(args[1])args[1].send("ok");
+    for(let i=0; i<clients.length;i++){
+      if(clients[i].res.destroyed){
+        clients.splice(i,1);break;
+      }
+      if(args[0]&&args[0].url&&args[0].url.replace(/\/close_/,"")==clients[i]._id)clients[i].res.end();
+    }
+    console.log(clients.length);
+    fs.writeFile('.count.json', String(clients.length), 'utf8',()=>{});
+    console.log(async_id_symbol);
+    reload_admin();
+    console.log("reload_admin");
+    if(_id=="undefined")return;
+    const limit = 1
+    let sort = { "start time": -1 }
+    const crr_cursor = collection.find(
+      {
+        "_id": new ObjectId(_id),
+      }, { sort, limit }
+    )
+    const crr_rows = await crr_cursor.toArray()
+    console.log("close_rows")
+    console.log(crr_rows)
+    const crr_user = crr_rows[0]
+    if(
+      /**/crr_user/**/                  !==void 0
+      &&  crr_user["Parking Space Num"] !==void 0
+      &&  crr_user["charge duration"]   ===void 0
+      &&  crr_user["start time"]        ===void 0
+    ){
+      console.log("deletedeletedeletedeletedeletedeletedeletedeletedeletedeletedeletedeletedeletedelete")
+      console.log(async_id_symbol);
+      reload_admin(_id);
+      collection.deleteOne({"_id": new ObjectId(_id)});
+    }else{
+      console.log("no delete")
+      if(crr_user)
+        console.log(`
+        ${/**/crr_user/**/                  !==void 0}
+        &&  ${crr_user["Parking Space Num"] !==void 0}
+        &&  ${crr_user["charge duration"]   ===void 0}
+        &&  ${crr_user["start time"]        ===void 0}
+        `)
+    }
 });
 app.get('/admin_debug_events', (req, res) => {console.log("get /admin_debug_events :"+req.url);
   res.setHeader("Access-Control-Allow-Origin","*");
@@ -333,6 +382,9 @@ app.get("/index_pub/event", (req, res)=>{console.log(req.url);
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
   index_loc_res=res;
+  let interval=setInterval(()=>{
+    res.write(": keep connect comment",(e)=>{if(e)clearInterval(interval)});
+  },60000);
   send_to_index_loc(last_event_data["event"],last_event_data["data"])
 })
 function send_to_index_loc(event,data){
