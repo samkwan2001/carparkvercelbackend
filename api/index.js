@@ -63,11 +63,12 @@ function clearIntervals(Intervals = []) {
 let console_log_res = void 0;
 log = console.log;
 console.log = (...data) => {
+  data=data.map(function(item) {try {return JSON.parse(item);} catch(e){return item;}})
     if (console_log_res !== void 0 && !console_log_res.destroyed) {
         console_log_res.write("event: message\n");
-        console_log_res.write("data:" + (data.join(" ")) + "\n\n");
+        console_log_res.write("data:" + (data.join("|\n|")).replace("\n\n"," \n ") + "\n\n");
     }
-    log(data.join(" "));
+    log(...data);
 };
 app.get("/console", (req, res) => {
     console.log(req.url);
