@@ -77,7 +77,7 @@ app.get("/console", (req, res) => {
     res.setHeader('Connection', 'keep-alive');
     console_log_res = res;
     let interval=setInterval(()=>{
-        res.write(": keep connect comment",(e)=>{if(e)clearInterval(interval)});
+        res.write(": keep connect comment\n\n",(e)=>{if(e)clearInterval(interval)});
   },60000);
 });
 
@@ -187,7 +187,7 @@ app.get('/events', (req, res) => {console.log("get /events :"+req.url);
   else if(user_agent.indexOf("Chrome")>=0)console.log("Chrome");
   console.log(async_id_symbol)
   let interval=setInterval(()=>{
-    res.write(": keep connect comment",(e)=>{if(e)clearInterval(interval)});
+    res.write(": keep connect comment\n\n",(e)=>{if(e)clearInterval(interval)});
   },60000);
   clients.push({"_id":urlparams.get("_id").replaceAll("\"", ""),"async_id_symbol" : async_id_symbol, "res": res, "interval":interval});
   console.log(({"_id":urlparams.get("_id").replaceAll("\"", ""),"async_id_symbol" : async_id_symbol}));
@@ -380,24 +380,34 @@ app.get("/admin_debug_fetch",async(req,res)=>{console.log("get /admin_debug_fetc
 // const msg_msgNtime=[]
 let last_event_data={}
 let index_loc_res=void 0;
+let pack_is_available=false;
+app.get("/is_pack_available", (req, res)=>res.send(pack_is_available));
+function send_pack_is_available(){
+  const m=pack_is_available?"pack_is_available":"pack_not_available"
+  send_to_client("message",m);
+  console.log(`send_to_client ${m}`);
+}
 app.get("/index_pub/event", (req, res)=>{console.log(req.url);
+  pack_is_available=true;
   res.setHeader("Access-Control-Allow-Origin","*");
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
   index_loc_res=res;
   let interval=setInterval(()=>{
-    res.write(": keep connect comment",(e)=>{if(e)clearInterval(interval)});
+    res.write(": keep connect comment\n\n",(e)=>{if(e)clearInterval(interval)});
   },60000);
   send_to_index_loc(last_event_data["event"],last_event_data["data"])
 })
 function send_to_index_loc(event,data){
   let success=false;
   if(index_loc_res!==void 0&&!index_loc_res.destroyed){
-    index_loc_res.write("event: "+event+"\n");
-    index_loc_res.write("data:" + data + "\n\n");
-    success=true;
+    index_loc_res.write("event: "+event+"\n",x=>success=x);
+    index_loc_res.write("data:" + data + "\n\n",x=>success=x);
+    // success=true;
   }
+  pack_is_available=success;
+  send_pack_is_available();
   // else {
     // setTimeout(send_to_index_loc,10,(event,data));
     last_event_data["event"]=event;
@@ -933,7 +943,6 @@ async function queue_shift(exception=void 0) {console.log("queue_shiftqqqqqqqqqq
     //if(log)console.log("abc"+queue_Interval)
   }
 }
-
 let charger_moving_intervals=[setInterval(()=>{},10)]
 async function call_charger_move_to(spot,_id = void 0) {//added ,_id = void 0
   console.log(`Moving to spot ${spot}`);
@@ -951,12 +960,18 @@ async function call_charger_move_to(spot,_id = void 0) {//added ,_id = void 0
   // if(spot==0)need_wait=0;//need_wait = (32 * 1000);
   // else need_wait = parseInt(await(await(await fetch(`http://${charger_IPV4}/how_long`)).blob()).text());
   // else 
+  const start=Date.now();
   await new Promise((resolve) => {
     charger_moving_intervals.push(setInterval(async () => {
       const completed = index_loc_msg_vaild_time<index_loc_msg_rev_time;
+      send_pack_is_available();
       if (completed) {
           resolve(); // 在完成後解析 Promise
-      }else console.log({"completed":{"index_loc_msg_rev_time":index_loc_msg_rev_time}});
+      }else if(Date.now()-start>60000){
+        send_to_index_loc("call_charger_move_to",spot);
+      }else{
+        console.log({"completed":{"index_loc_msg_rev_time":index_loc_msg_rev_time}})
+      };
     }, 2000));
   });
   console.log("need_wait");
