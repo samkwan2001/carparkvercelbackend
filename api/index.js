@@ -63,7 +63,7 @@ function clearIntervals(Intervals = []) {
 let console_log_res = void 0;
 log = console.log;
 console.log = (...data) => {
-  data=data.map(function(item) {try {return JSON.parse(item);} catch(e){return item;}})
+  data=data.map(function(item) {try {return JSON.parse(item);} catch(e){return `*${item}*`;}})
     if (console_log_res !== void 0 && !console_log_res.destroyed) {
         console_log_res.write("event: message\n");
         console_log_res.write("data:" + (data.join("|\n|")).replace("\n\n"," \n ") + "\n\n");
@@ -79,7 +79,7 @@ app.get("/console", (req, res) => {
   console_log_res = res;
   let interval=setInterval(()=>{
     res.write(": keep connect comment\n\n",(e)=>{console.log("comment to /console",e);if(e)clearInterval(interval)});
-  },60000);
+  },50000);
 });
 
 function sleep(ms) {
@@ -189,7 +189,7 @@ app.get('/events', (req, res) => {console.log("get /events :"+req.url);
   console.log(async_id_symbol)
   let interval=setInterval(()=>{
     res.write(": keep connect comment\n\n",(e)=>{console.log("comment to /events",e);if(e)clearInterval(interval)});
-  },60000);
+  },50000);
   clients.push({"_id":urlparams.get("_id").replaceAll("\"", ""),"async_id_symbol" : async_id_symbol, "res": res, "interval":interval});
   console.log(({"_id":urlparams.get("_id").replaceAll("\"", ""),"async_id_symbol" : async_id_symbol}));
   for(let i=0; i<clients.length;i++){
@@ -395,9 +395,25 @@ app.get("/index_pub/event", (req, res)=>{console.log(req.url);
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
   index_loc_res=res;
+  let loss_count=0;
+  let last_comment_time=0;
   let interval=setInterval(()=>{
-    res.write(": keep connect comment\n\n",(e)=>{console.log("comment to /index_pub/event",e);if(e)clearInterval(interval);});
-  },60000);
+    res.write(": keep connect comment\n\n",function(e){
+      console.log("comment to /index_pub/event",e);
+      if(e&&(loss_count++)>3){//not success and count and check count>3
+        clearInterval(interval);
+        pack_is_available=false;
+        console.log(`pack_is_available=${pack_is_available}, retry on 1000ms`)
+        setTimeout(()=>interval._onTimeout(),1000);
+      }else if(!e){//success
+        loss_count=0;//reset count
+        pack_is_available=true;
+        console.log("/index_pub/event comment interval",Date.now()-last_comment_time);
+        last_comment_time=Date.now();
+      }
+      send_pack_is_available();
+    });
+  },50000);
   send_to_index_loc(last_event_data["event"],last_event_data["data"])
 })
 function send_to_index_loc(event,data){
