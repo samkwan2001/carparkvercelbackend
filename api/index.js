@@ -382,7 +382,7 @@ let last_event_data={}
 let index_loc_res=void 0;
 let pack_is_available=false;
 app.get("/is_pack_available", (req, res)=>res.send(pack_is_available));
-function send_pack_is_available(){
+function send_pack_is_available(...args){
   const m=pack_is_available?"pack_is_available":"pack_not_available"
   send_to_client("message",m);
   console.log(`send_to_client ${m}`);
@@ -400,20 +400,16 @@ app.get("/index_pub/event", (req, res)=>{console.log(req.url);
   send_to_index_loc(last_event_data["event"],last_event_data["data"])
 })
 function send_to_index_loc(event,data){
-  let success=false;
   if(index_loc_res!==void 0&&!index_loc_res.destroyed){
-    index_loc_res.write("event: "+event+"\n",x=>success=x);
-    index_loc_res.write("data:" + data + "\n\n",x=>success=x);
-    // success=true;
+    index_loc_res.write("event: "+event+"\n",send_pack_is_available);
+    index_loc_res.write("data:" + data + "\n\n",send_pack_is_available);
   }
-  pack_is_available=success;
-  send_pack_is_available();
   // else {
     // setTimeout(send_to_index_loc,10,(event,data));
     last_event_data["event"]=event;
     last_event_data["data"] =data;
   // }
-  console.log(`send_to_index_loc(${event},${data})==${success}`)
+  console.log(`send_to_index_loc(${event},${data})`)
 };
 let index_loc_msg_rev_time=0;
 let need_wait=0;
