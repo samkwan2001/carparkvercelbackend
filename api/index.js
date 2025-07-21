@@ -79,7 +79,7 @@ app.get("/console", (req, res) => {
   console_log_res = res;
   let interval=setInterval(()=>{
     res.write(": keep connect comment\n\n",(e)=>{console.log("comment to /console",e);if(e)clearInterval(interval)});
-  },50000);
+  },30000);
 });
 
 function sleep(ms) {
@@ -189,7 +189,7 @@ app.get('/events', (req, res) => {console.log("get /events :"+req.url);
   console.log(async_id_symbol)
   let interval=setInterval(()=>{
     res.write(": keep connect comment\n\n",(e)=>{console.log("comment to /events",e);if(e)clearInterval(interval)});
-  },50000);
+  },30000);
   clients.push({"_id":urlparams.get("_id").replaceAll("\"", ""),"async_id_symbol" : async_id_symbol, "res": res, "interval":interval});
   console.log(({"_id":urlparams.get("_id").replaceAll("\"", ""),"async_id_symbol" : async_id_symbol}));
   for(let i=0; i<clients.length;i++){
@@ -413,7 +413,7 @@ app.get("/index_pub/event", (req, res)=>{console.log(req.url);
       }
       send_pack_is_available();
     });
-  },50000);
+  },30000);
   send_to_index_loc(last_event_data["event"],last_event_data["data"])
 })
 function send_to_index_loc(event,data){
