@@ -960,10 +960,11 @@ async function call_charger_move_to(spot,_id = void 0) {//added ,_id = void 0
   await new Promise((resolve) => {
     charger_moving_intervals.push(setInterval(async () => {
       const completed = index_loc_msg_vaild_time<index_loc_msg_rev_time;
-      send_pack_is_available();
       if (completed) {
+          send_pack_is_available();
           resolve(); // 在完成後解析 Promise
       }else if(Date.now()-start>60000){
+        start=Date.now();
         send_to_index_loc("call_charger_move_to",spot);
       }else{
         console.log({"completed":{"index_loc_msg_rev_time":index_loc_msg_rev_time}})
