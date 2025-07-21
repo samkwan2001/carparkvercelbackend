@@ -77,8 +77,8 @@ app.get("/console", (req, res) => {
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
   console_log_res = res;
-  let interval=setInterval(()=>{console.log("comment to /console");
-    res.write(": keep connect comment\n\n",(e)=>{if(e)clearInterval(interval)});
+  let interval=setInterval(()=>{
+    res.write(": keep connect comment\n\n",(e)=>{console.log("comment to /console",e);if(e)clearInterval(interval)});
   },60000);
 });
 
@@ -187,8 +187,8 @@ app.get('/events', (req, res) => {console.log("get /events :"+req.url);
   else if(user_agent.indexOf("Firefox")>=0)console.log("Firefox");
   else if(user_agent.indexOf("Chrome")>=0)console.log("Chrome");
   console.log(async_id_symbol)
-  let interval=setInterval(()=>{console.log("comment to /events");
-    res.write(": keep connect comment\n\n",(e)=>{if(e)clearInterval(interval)});
+  let interval=setInterval(()=>{
+    res.write(": keep connect comment\n\n",(e)=>{console.log("comment to /events",e);if(e)clearInterval(interval)});
   },60000);
   clients.push({"_id":urlparams.get("_id").replaceAll("\"", ""),"async_id_symbol" : async_id_symbol, "res": res, "interval":interval});
   console.log(({"_id":urlparams.get("_id").replaceAll("\"", ""),"async_id_symbol" : async_id_symbol}));
@@ -395,8 +395,8 @@ app.get("/index_pub/event", (req, res)=>{console.log(req.url);
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
   index_loc_res=res;
-  let interval=setInterval(()=>{console.log("comment to /index_pub/event");
-    res.write(": keep connect comment\n\n",(e)=>{if(e)clearInterval(interval)});
+  let interval=setInterval(()=>{
+    res.write(": keep connect comment\n\n",(e)=>{console.log("comment to /index_pub/event",e);if(e)clearInterval(interval);});
   },60000);
   send_to_index_loc(last_event_data["event"],last_event_data["data"])
 })
