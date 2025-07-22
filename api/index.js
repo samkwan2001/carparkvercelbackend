@@ -388,6 +388,7 @@ function send_pack_is_available(...args){
   send_to_client("message",m);
   console.log(`send_to_client ${m}`);
 }
+_5min_test=void 0;
 app.get("/index_pub/event", (req, res)=>{console.log(req.url);
   pack_is_available=true;
   res.setHeader("Access-Control-Allow-Origin","*");
@@ -417,6 +418,17 @@ app.get("/index_pub/event", (req, res)=>{console.log(req.url);
       send_pack_is_available();
     });
   },30000);
+                      
+                      if(_5min_test)clearInterval(_5min_test);
+                      _5min_count=0;
+                      _5min_test=setInterval(function(){
+                        every=setInterval(function(){
+                          res.write(`event:message\ndata:_5min_count=${_5min_count++}\n\n`);
+                        },500);
+                        setTimeout(function(){clearInterval(every)},20*1000)
+                      },(5*60*1000)-(10*1000));
+  
+  
   send_to_index_loc(last_event_data["event"],last_event_data["data"])
 })
 function send_to_index_loc(event,data){
