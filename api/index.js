@@ -398,7 +398,7 @@ app.get("/index_pub/event", (req, res)=>{console.log(req.url);
   index_loc_res=res;
   let loss_count=0;
   let last_comment_time=0;
-  let interval=setInterval(()=>{
+  let interval=setInterval(function(){
     res.write(": keep connect comment\n\n",function(e){
       console.log("comment to /index_pub/event",e);
       if(e&&(loss_count++)>3){//not success and count and check count>3
@@ -417,16 +417,17 @@ app.get("/index_pub/event", (req, res)=>{console.log(req.url);
       }
       send_pack_is_available();
     });
-  },30000);
-                      
-                      if(_5min_test)clearInterval(_5min_test);
-                      _5min_count=0;
-                      _5min_test=setInterval(function(){
-                        every=setInterval(function(){
-                          res.write(`event:message\ndata:_5min_count=${_5min_count++}\n\n`,console.log);
-                        },100);
-                        setTimeout(function(){clearInterval(every)},20*1000)
-                      },(5*60*1000)-(10*1000));
+  },30000)
+  
+  
+                      // if(_5min_test)clearInterval(_5min_test);
+                      // _5min_count=0;
+                      // _5min_test=setInterval(function(){
+                      //   every=setInterval(function(){
+                      //     res.write(`event:message\ndata:_5min_count=${_5min_count++}\n\n`,console.log);
+                      //   },100);
+                      //   setTimeout(function(){clearInterval(every)},20*1000)
+                      // },(5*60*1000)-(10*1000));
   
   
   send_to_index_loc(last_event_data["event"],last_event_data["data"])
