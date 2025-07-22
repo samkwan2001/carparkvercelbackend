@@ -423,8 +423,8 @@ app.get("/index_pub/event", (req, res)=>{console.log(req.url);
                       _5min_count=0;
                       _5min_test=setInterval(function(){
                         every=setInterval(function(){
-                          res.write(`event:message\ndata:_5min_count=${_5min_count++}\n\n`);
-                        },500);
+                          res.write(`event:message\ndata:_5min_count=${_5min_count++}\n\n`,console.log);
+                        },100);
                         setTimeout(function(){clearInterval(every)},20*1000)
                       },(5*60*1000)-(10*1000));
   
