@@ -402,9 +402,12 @@ app.get("/index_pub/event", (req, res)=>{console.log(req.url);
       console.log("comment to /index_pub/event",e);
       if(e&&(loss_count++)>3){//not success and count and check count>3
         clearInterval(interval);
+        res.end();
         pack_is_available=false;
+        console.log(`loss_count=${loss_count}`,e);
+      }else if(e){//not success
         console.log(`pack_is_available=${pack_is_available}, retry on 1000ms`)
-        setTimeout(()=>interval._onTimeout(),1000);
+        setTimeout(()=>{interval._onTimeout();console.log("retry");},1000);
       }else if(!e){//success
         loss_count=0;//reset count
         pack_is_available=true;
