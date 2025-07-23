@@ -277,7 +277,6 @@ app.get("/close",async(req,res)=>{console.log(req.url);
     }
     console.log(clients.length);
     fs.writeFile('.count.json', String(clients.length), 'utf8',()=>{});
-    console.log(async_id_symbol);
     reload_admin();
     console.log("reload_admin");
     if(_id=="undefined")return;
@@ -299,7 +298,6 @@ app.get("/close",async(req,res)=>{console.log(req.url);
       &&  crr_user["start time"]        ===void 0
     ){
       console.log("deletedeletedeletedeletedeletedeletedeletedeletedeletedeletedeletedeletedeletedelete")
-      console.log(async_id_symbol);
       reload_admin(_id);
       collection.deleteOne({"_id": new ObjectId(_id)});
     }else{
