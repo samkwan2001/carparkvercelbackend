@@ -989,7 +989,7 @@ async function call_charger_move_to(spot,_id = void 0) {//added ,_id = void 0
   // if(spot==0)need_wait=0;//need_wait = (32 * 1000);
   // else need_wait = parseInt(await(await(await fetch(`http://${charger_IPV4}/how_long`)).blob()).text());
   // else 
-  const start=Date.now();
+  let start=Date.now();
   await new Promise((resolve) => {
     charger_moving_intervals.push(setInterval(async () => {
       const completed = index_loc_msg_vaild_time<index_loc_msg_rev_time;
