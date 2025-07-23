@@ -468,22 +468,36 @@ app.get("/sorttable.js",(req,res)=>{console.log("get /admin_debug :"+req.url);
 	res.send(process.env.sorttable_js);
 }); 
 app.get("/qr",(req,res)=>{
-  res.send(`<div id=\"qr-code\"></div>
-    <script src=\"https://cdn.jsdelivr.net/npm/qrcodejs2\"></script>
-    <p>{{payload}}</p>
-    <script>
-            var protocol = location.protocol;
-            var slashes = protocol.concat(\"//\");
-  //         var host = slashes.concat(window.location.host);
-  //         // or as you probably should do
-  //         var host = location.protocol.concat(\"//\").concat(window.location.host);
-  //         // the above is the same as origin, e.g. \"https://stackoverflow.com\"
-  //         var host = window.location.origin;
-  // // 生成 QR code
-  //         const url = host+\"/car/{{payload}}\"; // 更換為您的停車場網站 URL
-  //         new QRCode(document.getElementById(\"qr-code\"), url);
-  // </script>
-  `,
+  res.send(`<div id="container"></div><script src="https://cdn.jsdelivr.net/npm/qrcodejs2"></script>
+<script>
+    var host = "https://carparktestfrontend-fork.vercel.app"
+    // 生成 QR code
+    const container = document.getElementById("container");
+    container.style.display = "grid";
+    container.style.gridTemplateColumns = "repeat(3,33.33%)";
+    container.style.gridTemplateRows = "repeat(4,33.33%)";
+    for (let i = 1; i < 12; i++) {
+        const qr_div = document.createElement("div");
+        const url = (host + "/" + btoa(i));
+        new QRCode(qr_div, url);
+        const label = document.createElement("h1");
+        label.innerText = i;
+        qr_div.appendChild(label);
+        container.appendChild(qr_div);
+        label.style.textCombineUpright = "all";
+        label.style.marginBlockStart = "-10px";
+        label.style.textAlign = "center"
+        qr_div.style.marginBlockStart = "50px";
+        qr_div.childNodes.forEach((node)=>{
+            console.log(node)
+            // console.log(node.tagName,node.tagName=="IMG")
+            if (node.tagName == "IMG") {
+                node.style.marginLeft = "auto"
+                node.style.marginRight = "auto"
+                console.log(node.style.marginLeft,
+                node.style.marginRight)
+            }})}
+</script>`,
   )
 })
 
@@ -1013,7 +1027,7 @@ async function call_charger_move_to(spot,_id = void 0) {//added ,_id = void 0
   // last_queue_shift=Date.now();
   if(_id!==void 0)send_to_client("message","fetchData",_id=_id)//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   console.log("sleeping");
-  await sleep(need_wait);
+  // await sleep(need_wait);
   console.log("sleeped-----------------------------------------------------------------------------------------------------------------------");
   const isComplete_list=[];
   let fetch_count = 0;
