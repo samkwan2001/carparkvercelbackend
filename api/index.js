@@ -181,7 +181,6 @@ app.get('/events', (req, res) => {console.log("get /events :"+req.url);
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
-  send_pack_is_available();
   let urlparams = new URLSearchParams(req.url.split("?")[1]);
   console.log(urlparams);
   console.log(urlparams.get("_id") != '"undefined"');
@@ -217,6 +216,7 @@ app.get('/events', (req, res) => {console.log("get /events :"+req.url);
     }
   }
   console.log(clients.length);
+  send_pack_is_available();
   fs.writeFile('.count.json', String(clients.length), 'utf8',()=>{});
   const _id=urlparams.get("_id").replaceAll("\"", "")
   const handle_close=async(...args)=> {
@@ -454,9 +454,12 @@ app.get("/index_pub/event", (req, res)=>{console.log(req.url);
   req.on("close",()=>{
     clearInterval(interval);
     clearTimeout(timeout);
-    index_pub_event_close_Timeout=setTimeout(
-      function(){pack_is_available=false},3000);
-    console.log("/index_pub/event close")
+    index_pub_event_close_Timeout=setTimeout(function(){
+      console.log("/index_pub/event close timeout");
+      pack_is_available=false;
+      send_pack_is_available();
+    },3000);
+    console.log("/index_pub/event close");
   });
   
   
