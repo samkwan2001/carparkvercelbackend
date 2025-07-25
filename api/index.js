@@ -199,6 +199,15 @@ app.get('/events', (req, res) => {console.log("get /events :"+req.url);
   let interval=setInterval(()=>{
     res.write(": keep connect comment\n\n",(e)=>{console.log("comment to /events",e);if(e)clearInterval(interval)});
   },30000);
+  let timeout = setTimeout(()=>{
+    console.log("reconnect /console")
+    res.write("event: reconnect\n");
+    res.write("data:" + String(0) + "\n\n",(e)=>{console.log(e);res.end()});
+  },3*60*1000);
+  req.on("close",()=>{
+    clearInterval(interval);
+    clearTimeout(timeout);
+  });
   clients.push({"_id":urlparams.get("_id").replaceAll("\"", ""),"async_id_symbol" : async_id_symbol, "res": res, "interval":interval});
   console.log(({"_id":urlparams.get("_id").replaceAll("\"", ""),"async_id_symbol" : async_id_symbol}));
   for(let i=0; i<clients.length;i++){
@@ -326,6 +335,15 @@ app.get('/admin_debug_events', (req, res) => {console.log("get /admin_debug_even
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
   admin_debug_res=res;
+  let timeout = setTimeout(()=>{
+    console.log("reconnect /console")
+    res.write("event: reconnect\n");
+    res.write("data:" + String(0) + "\n\n",(e)=>{console.log(e);res.end()});
+  },3*60*1000);
+  req.on("close",()=>{
+    clearInterval(interval);
+    clearTimeout(timeout);
+  });
 });
 app.get("/admin_debug_fetch",async(req,res)=>{console.log("get /admin_debug_fetch :"+req.url);
   const rows = await collection.find({}).toArray();
@@ -424,7 +442,16 @@ app.get("/index_pub/event", (req, res)=>{console.log(req.url);
       }
       send_pack_is_available();
     });
-  },30000)
+  },30000);
+  let timeout = setTimeout(()=>{
+    console.log("reconnect /console")
+    res.write("event: reconnect\n");
+    res.write("data:" + String(0) + "\n\n",(e)=>{console.log(e);res.end()});
+  },3*60*1000);
+  req.on("close",()=>{
+    clearInterval(interval);
+    clearTimeout(timeout);
+  });
   
   
                       // if(_5min_test)clearInterval(_5min_test);
