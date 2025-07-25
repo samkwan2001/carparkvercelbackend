@@ -82,7 +82,8 @@ app.get("/console", (req, res) => {
   },30000);
   let timeout = setTimeout(()=>{
     console.log("reconnect /console")
-    res.send("event: reconnect\ndata:0\n\n",(e)=>{console.log(e);res.end()});
+    res.write("event: reconnect\n");
+    res.write("data:" + String(0) + "\n\n",(e)=>{console.log(e);res.end()});
   },3*60*1000);
   req.on("close",()=>{
     clearInterval(interval);
