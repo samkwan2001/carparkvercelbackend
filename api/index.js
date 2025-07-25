@@ -181,6 +181,7 @@ app.get('/events', (req, res) => {console.log("get /events :"+req.url);
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
+  send_pack_is_available();
   let urlparams = new URLSearchParams(req.url.split("?")[1]);
   console.log(urlparams);
   console.log(urlparams.get("_id") != '"undefined"');
