@@ -81,8 +81,8 @@ app.get("/console", (req, res) => {
     res.write(": keep connect comment\n\n",(e)=>{console.log("comment to /console",e);if(e)clearInterval(interval)});
   },30000);
   let timeout = setTimeout(()=>{
-    res.send("event: reconnect\ndata:0\n\n");
-    res.end();
+    console.log("reconnect /console")
+    res.send("event: reconnect\ndata:0\n\n",(e)=>{console.log(e);res.end()});
   },3*60*1000);
   req.on("close",()=>{
     clearInterval(interval);
