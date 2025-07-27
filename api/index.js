@@ -408,7 +408,7 @@ app.get("/admin_debug_fetch",async(req,res)=>{console.log("get /admin_debug_fetc
 let last_event_data={}
 let index_loc_res=void 0;
 let pack_is_available=false;
-app.get("/is_pack_available", function(req, res){res.send(pack_is_available)});
+app.get("/is_pack_available", function(req, res){res.send(pack_is_available);send_pack_is_available()});
 function send_pack_is_available(...args){
   const m=pack_is_available?"pack_is_available":"pack_not_available"
   send_to_client("message",m);
