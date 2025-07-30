@@ -63,14 +63,21 @@ function clearIntervals(Intervals = []) {
 let console_log_res = void 0;
 log = console.log;
 console.log = (...data) => {
-  if(this)caller = `<${(console.log.caller==null?"top":console.log.caller)}>`;
-  else caller = "strict mode";
+  
+  var callerName;
+    try { throw new Error(); }
+    catch (e) { 
+        var re = /(\w+)@|at (\w+) \(/g, st = e.stack, m;
+        re.exec(st), m = re.exec(st);
+        callerName = m[1] || m[2];
+    }
+  
   data=data.map(function(item) {try {return JSON.parse(item);} catch(e){return `*${item}*`;}})
     if (console_log_res !== void 0 && !console_log_res.destroyed) {
         console_log_res.write("event: message\n");
-        console_log_res.write("data:" +caller+ (data.join("|/|")).replace("\n\n"," \n ") + "\n\n");
+        console_log_res.write("data:" +callerName+ (data.join("|/|")).replace("\n\n"," \n ") + "\n\n");
     }
-    log(caller,...data);
+    log(callerName,...data);
 };
 app.get("/console", (req, res) => {
   console.log("req.url",req.url);
