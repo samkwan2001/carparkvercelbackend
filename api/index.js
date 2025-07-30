@@ -427,7 +427,8 @@ app.get("/index_pub/event", (req, res)=>{console.log(req.url);
   let loss_count=0;
   let last_comment_time=0;
   let interval=setInterval(function(){
-    res.write(": keep connect comment\n\n",function(e){
+    res.write("event: comment\n");
+    res.write("data: keep connect comment\n\n",function(e){
       console.log("comment to /index_pub/event",e);
       if(e&&(loss_count++)>3){//not success and count and check count>3
         clearInterval(interval);
@@ -445,12 +446,12 @@ app.get("/index_pub/event", (req, res)=>{console.log(req.url);
       }
       send_pack_is_available();
     });
-  },30000);
+  },15000);
   let timeout = setTimeout(()=>{
     console.log("reconnect /index_pub/event")
     res.write("event: reconnect\n");
     res.write("data:" + String(0) + "\n\n",(e)=>{console.log(e);res.end()});
-  },30*1000);
+  },3*60*1000);
   req.on("close",()=>{
     clearInterval(interval);
     clearTimeout(timeout);
@@ -1015,8 +1016,8 @@ async function queue_shift(exception=void 0) {console.log("queue_shiftqqqqqqqqqq
   last_queue_shift = Date.now()
   retry_reload_interval=setInterval(retry_reload,500)
   await call_charger_move_to(user_who_need_to_charge["Parking Space Num"],_id=user_who_need_to_charge["_id"])  // TODO control fung's machine
-  console.log("process returned to queue_shift and there_are_queuing:",there_are_queuing,charging_user !== undefined);
-  if (there_are_queuing||charging_user !== undefined) {//!---------------------------------------
+  console.log("process returned to queue_shift and user_who_need_to_charge.charge duration:",user_who_need_to_charge["charge duration"]);
+  if (there_are_queuing||user_who_need_to_charge["charge duration"] !== null) {//!---------------------------------------
     const now = new Date(Date.now());
     const result = await collection.updateOne(
       user_who_need_to_charge,
