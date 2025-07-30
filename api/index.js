@@ -69,7 +69,9 @@ console.log = (...data) => {
     catch (e) { 
         var re = /(\w+)@|at (\w+) \(/g, st = e.stack, m;
         re.exec(st), m = re.exec(st);
+        if (m) 
         callerName = m[1] || m[2];
+        else callerName = "unknown";
     }
   
   data=data.map(function(item) {try {return JSON.parse(item);} catch(e){return `*${item}*`;}})
