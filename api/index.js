@@ -48,7 +48,7 @@ let timer = setInterval(async () => {
 function clearIntervals(Intervals = []) {
     // console.log("Intervals:",Intervals.length);
     // for (let i = 0; i < Intervals.length; i++) {
-    //     // console.log(Intervals[i])
+    //     // console.log("Intervals[i]:",Intervals[i]);
     //     if (!Intervals[i]._destroyed) {
     //         clearInterval(Intervals[i]);
     //     }
@@ -63,15 +63,16 @@ function clearIntervals(Intervals = []) {
 let console_log_res = void 0;
 log = console.log;
 console.log = (...data) => {
+  caller = `<${(console.log.caller==null?"top":console.log.caller)}>`;
   data=data.map(function(item) {try {return JSON.parse(item);} catch(e){return `*${item}*`;}})
     if (console_log_res !== void 0 && !console_log_res.destroyed) {
         console_log_res.write("event: message\n");
-        console_log_res.write("data:" + (data.join("|/|")).replace("\n\n"," \n ") + "\n\n");
+        console_log_res.write("data:" +caller+ (data.join("|/|")).replace("\n\n"," \n ") + "\n\n");
     }
-    log(...data);
+    log(caller,...data);
 };
 app.get("/console", (req, res) => {
-  console.log(req.url);
+  console.log("req.url",req.url);
   res.setHeader("Access-Control-Allow-Origin","*");
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
@@ -83,7 +84,7 @@ app.get("/console", (req, res) => {
   let timeout = setTimeout(()=>{
     console.log("reconnect /console")
     res.write("event: reconnect\n");
-    res.write("data:" + String(0) + "\n\n",(e)=>{console.log(e);res.end()});
+    res.write("data:" + String(0) + "\n\n",(e)=>{console.log("e",e);res.end()});
   },3*60*1000);
   req.on("close",()=>{
     clearInterval(interval);
@@ -139,7 +140,7 @@ function reload_all_client(exception=void 0,_id=void 0) {
   console.log("rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr");
   let count=0;
   clients.forEach(async(client) => {
-    // console.log(client)
+    // console.log("client",client)
     if(!client["res"].destroyed){
       // console.log(client["_id"])
       console.log("reload client"+client["async_id_symbol"],client["_id"])
@@ -159,7 +160,7 @@ function send_to_client(event,data,_id=void 0) {
   console.log("ssssssssssssssssssssssssssssssssssss");
   let count=0;
   clients.forEach(async(client) => {
-    // console.log(client)
+    // console.log("client",client)
     if(!client["res"].destroyed){
       // console.log(client["_id"])
       console.log("sent client",client["async_id_symbol"],client["_id"],":", {event:event},{data:data})
@@ -182,7 +183,7 @@ app.get('/events', (req, res) => {console.log("get /events :"+req.url);
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
   let urlparams = new URLSearchParams(req.url.split("?")[1]);
-  console.log(urlparams);
+  console.log("urlparams",urlparams);
   console.log(urlparams.get("_id") != '"undefined"');
   console.log(`${urlparams.get("_id")}!=${'"undefined"'}`);
   console.log("---------------------------------------")
@@ -195,14 +196,14 @@ app.get('/events', (req, res) => {console.log("get /events :"+req.url);
   /**/ if(user_agent.indexOf("Edg")>=0)console.log("Edge");
   else if(user_agent.indexOf("Firefox")>=0)console.log("Firefox");
   else if(user_agent.indexOf("Chrome")>=0)console.log("Chrome");
-  console.log(async_id_symbol)
+  console.log("async_id_symbol",async_id_symbol);
   let interval=setInterval(()=>{
     res.write(": keep connect comment\n\n",(e)=>{console.log("comment to /events",e);if(e)clearInterval(interval)});
   },30000);
   let timeout = setTimeout(()=>{
     console.log("reconnect /events")
     res.write("event: reconnect\n");
-    res.write("data:" + String(0) + "\n\n",(e)=>{console.log(e);res.end()});
+    res.write("data:" + String(0) + "\n\n",(e)=>{console.log("e",e);res.end()});
   },3*60*1000);
   req.on("close",()=>{
     clearInterval(interval);
@@ -215,13 +216,12 @@ app.get('/events', (req, res) => {console.log("get /events :"+req.url);
       clients.splice(i,1);break;
     }
   }
-  console.log(clients.length);
+  console.log("clients.length",clients.length);
   send_pack_is_available();
   fs.writeFile('.count.json', String(clients.length), 'utf8',()=>{});
   const _id=urlparams.get("_id").replaceAll("\"", "")
   const handle_close=async(...args)=> {
-    console.log("closeclclclclclclclclclclclclclclcl");
-    console.log(args);
+    console.log(args,"closeclclclclclclclclclclclclclclcl");
     if(args[1])args[1].send("ok");
     for(let i=0; i<clients.length;i++){
       if(clients[i].res.destroyed){
@@ -229,9 +229,9 @@ app.get('/events', (req, res) => {console.log("get /events :"+req.url);
       }
       if(args[0]&&args[0].url&&args[0].url.replace(/\/close_/,"")==clients[i]._id)clients[i].res.end();
     }
-    console.log(clients.length);
+    console.log("clients.length",clients.length);
     fs.writeFile('.count.json', String(clients.length), 'utf8',()=>{});
-    console.log(async_id_symbol);
+    console.log("async_id_symbol",async_id_symbol);
     reload_admin();
     console.log("reload_admin");
     if(_id=="undefined")return;
@@ -243,8 +243,7 @@ app.get('/events', (req, res) => {console.log("get /events :"+req.url);
       }, { sort, limit }
     )
     const crr_rows = await crr_cursor.toArray()
-    console.log("close_rows")
-    console.log(crr_rows)
+    console.log("close_rows",crr_rows)
     const crr_user = crr_rows[0]
     if(
       /**/crr_user/**/                  !==void 0
@@ -252,8 +251,7 @@ app.get('/events', (req, res) => {console.log("get /events :"+req.url);
       &&  crr_user["charge duration"]   ===void 0
       &&  crr_user["start time"]        ===void 0
     ){
-      console.log("deletedeletedeletedeletedeletedeletedeletedeletedeletedeletedeletedeletedeletedelete")
-      console.log(async_id_symbol);
+      console.log(async_id_symbol,"deletedeletedeletedeletedeletedeletedeletedeletedeletedeletedeletedeletedeletedelete")
       reload_admin(_id);
       collection.deleteOne({"_id": new ObjectId(_id)});
     }else{
@@ -282,11 +280,10 @@ app.get('/events', (req, res) => {console.log("get /events :"+req.url);
       res.write("data:" + "fetchData" + "\n\n");
   }
 });
-app.get("/close",async(req,res)=>{console.log(req.url);
+app.get("/close",async(req,res)=>{console.log("req.url",req.url);
     let urlparams = new URLSearchParams(req.url.split("?")[1]);
     const _id=urlparams.get("_id").replaceAll("\"", "")
-    console.log("closeclclclclclclclclclclclclclclcl");
-    console.log(_id);
+    console.log(_id,"closeclclclclclclclclclclclclclclcl");
     if(res)res.send("ok");
     for(let i=0; i<clients.length;i++){
       if(clients[i].res.destroyed){
@@ -294,7 +291,7 @@ app.get("/close",async(req,res)=>{console.log(req.url);
       }
     //   if(req&&req.url&&req.url.replace(/\/close_/,"")==clients[i]._id)clients[i].res.end();
     }
-    console.log(clients.length);
+    console.log("clients.length",clients.length);
     fs.writeFile('.count.json', String(clients.length), 'utf8',()=>{});
     reload_admin();
     console.log("reload_admin");
@@ -307,8 +304,7 @@ app.get("/close",async(req,res)=>{console.log(req.url);
       }, { sort, limit }
     )
     const crr_rows = await crr_cursor.toArray()
-    console.log("close_rows")
-    console.log(crr_rows)
+    console.log("close_rows",crr_rows)
     const crr_user = crr_rows[0]
     if(
       /**/crr_user/**/                  !==void 0
@@ -339,7 +335,7 @@ app.get('/admin_debug_events', (req, res) => {console.log("get /admin_debug_even
   let timeout = setTimeout(()=>{
     console.log("reconnect /console")
     res.write("event: reconnect\n");
-    res.write("data:" + String(0) + "\n\n",(e)=>{console.log(e);res.end()});
+    res.write("data:" + String(0) + "\n\n",(e)=>{console.log("e",e);res.end()});
   },3*60*1000);
   req.on("close",()=>{
     clearInterval(interval);
@@ -353,15 +349,15 @@ app.get("/admin_debug_fetch",async(req,res)=>{console.log("get /admin_debug_fetc
   
   
     rows.forEach((row)=>{
-      // console.log(clients)
+      // console.log("clients",clients)
       let client=clients.filter((client)=>{
-        // console.log(client._id)
-        // console.log(String(row._id))
-        // console.log(client._id==String(row._id))
+        // console.log("client._id",client._id)
+        // console.log("String(row._id)",String(row._id))
+        // console.log("client._id==String(row._id)",client._id==String(row._id))
         if(client._id==String(row._id))
         return client
       })
-      // console.log(client)
+      // console.log("client",client)
       const result = {};
       let key;
       
@@ -417,7 +413,7 @@ function send_pack_is_available(...args){
 _5min_test=void 0;
 index_pub_event_close_Timeout=setTimeout(()=>{});
 let index_pub_event_comment_interval=setInterval(()=>{})
-app.get("/index_pub/event", (req, res)=>{console.log(req.url);
+app.get("/index_pub/event", (req, res)=>{console.log("req.url",req.url);
   clearTimeout(index_pub_event_close_Timeout);
   clearInterval(index_pub_event_comment_interval);
   pack_is_available=true;
@@ -457,7 +453,7 @@ app.get("/index_pub/event", (req, res)=>{console.log(req.url);
   // let timeout = setTimeout(()=>{
   //   console.log("reconnect /index_pub/event")
   //   res.write("event: reconnect\n");
-  //   res.write("data:" + String(0) + "\n\n",(e)=>{console.log(e);res.end()});
+  //   res.write("data:" + String(0) + "\n\n",(e)=>{console.log("e",e);res.end()});
   // },3*60*1000);
   req.on("close",()=>{
     clearInterval(interval);
@@ -504,9 +500,9 @@ app.get("/index_loc/push", (req, res)=>{const log=true;
   send_pack_is_available();
   if (log) console.log('app.get("/index_loc/push")' + req.url);
   if (log) console.log('app.get("/index_loc/push")' + decodeURI(req.url));
-  // if(log)console.log(req);
+  // if(log)console.log("req",req);
   var params = new URLSearchParams(req.url.split("?")[1]);
-  if (log) console.log(params);
+  if (log) console.log("params", params);
   if(params.get("spot")!==void 0){
     charger_is_moving_to_spot=parseInt(params.get("spot"));
   }
@@ -514,8 +510,8 @@ app.get("/index_loc/push", (req, res)=>{const log=true;
     need_wait=parseInt(params.get("need_wait"));
     index_loc_msg_rev_time=Date.now();
   }
-    console.log({"need_wait":need_wait});
-    console.log({"index_loc/push":{"index_loc_msg_rev_time":index_loc_msg_rev_time}});
+    console.log("need_wait",need_wait);
+    console.log("index_loc/push","index_loc_msg_rev_time",index_loc_msg_rev_time);
   res.send("OK");
 })
 app.get("/admin_debug.html",(req,res)=>{console.log("get /admin_debug :"+req.url);
@@ -548,7 +544,7 @@ app.get("/qr",(req,res)=>{
         label.style.textAlign = "center"
         qr_div.style.marginBlockStart = "50px";
         qr_div.childNodes.forEach((node)=>{
-            console.log(node)
+            console.log("node",node);
             // console.log(node.tagName,node.tagName=="IMG")
             if (node.tagName == "IMG") {
                 node.style.marginLeft = "auto"
@@ -577,15 +573,14 @@ app.get('/', async (req, res) => {const log=false;
     let sort = {};
     let limit = 0;
     let urlparams = new URLSearchParams(req.url.split("?")[1]);
-    console.log(urlparams);
+    console.log("urlparams",urlparams);
     console.log(urlparams.get("_id") != '"undefined"');
     console.log(`${urlparams.get("_id")}!=${'"undefined"'}`);
     console.log("---------------------------------------")
     let this_user = undefined;
     if (urlparams.get("_id") != '"undefined"') {
       query = { _id: new mongodb.ObjectId(urlparams.get("_id").replaceAll("\"", "")) };
-      console.log("query")
-      console.log(query);
+      console.log("query",query)
       // 執行查詢
       let cursor = collection.find(query).sort(sort);
       if (limit > 0) {
@@ -594,8 +589,7 @@ app.get('/', async (req, res) => {const log=false;
       const results = await cursor.toArray();
 
       this_user = results[0];  // 將this_user賦汝一個值,個值是carNum_response.data既第0個值  ===> carNum_response.data既第0個
-      console.log("this_user")
-      console.log(this_user)
+      console.log("this_user",this_user)
       if(this_user===undefined&&urlparams.get("Parking Space Num")!==void 0){
         if(urlparams.get("Parking Space Num")===undefined 
           || +urlparams.get("Parking Space Num")<1
@@ -613,9 +607,8 @@ app.get('/', async (req, res) => {const log=false;
     let carNum="?";
     if(this_user===undefined)carNum=urlparams.get("Parking Space Num");
     else carNum=this_user["Parking Space Num"];
-    console.log('carNum="?"')
-    console.log(carNum)
-    console.log(this_user)
+    console.log('carNum',carNum)
+    console.log("this_user",this_user)
     if (this_user === undefined || this_user["charge duration"]===undefined) { 
       console.log(urlparams.get("Parking Space Num"))
       const limit = 1
@@ -628,8 +621,7 @@ app.get('/', async (req, res) => {const log=false;
         }, { sort, limit }
       )
       const charging_rows = await charging_cursor.toArray()
-      console.log("charging_rows")
-      console.log(charging_rows)
+      console.log("charging_rows",charging_rows)
       const charging_user = charging_rows[0]
       if (charging_user !== undefined){
         if (charging_user["start time"] !== undefined && (new Date(charging_user["start time"]).getTime() + (charging_user["charge duration"] * 60 * 1000)) - new Date(Date.now()).getTime() < 0){
@@ -644,8 +636,7 @@ app.get('/', async (req, res) => {const log=false;
                                                           //   }, { sort, limit }
                                                           // )
                                                           // const selecting_rows = await selecting_cursor.toArray()
-                                                          // console.log("selecting_rows")
-                                                          // console.log(selecting_rows)
+                                                          // console.log("selecting_rows",selecting_rows)
                                                           // const selecting_user = selecting_rows[0]
                                                           // if(
                                                           //   /**/selecting_user/**/                  !==void 0
@@ -687,8 +678,7 @@ app.get('/', async (req, res) => {const log=false;
         }, { sort, limit }
       )
       const selecting_rows = await selecting_cursor.toArray()
-      console.log("selecting_rows")
-      console.log(selecting_rows)
+      console.log("selecting_rows",selecting_rows)
       const selecting_user = selecting_rows[0]
       if(
         /**/selecting_user/**/                  !==void 0
@@ -739,8 +729,7 @@ app.get('/', async (req, res) => {const log=false;
       }
       )
       const queue_response_data = await queue_response_cursor.toArray();
-      console.log("queue_response");
-      console.log(queue_response_data);
+      console.log("queue_response",queue_response_data);
       const limit = 1
       let sort = { "start time": -1 }  //sort by _id; -1==>倒序
       const charging_cursor = collection.find(
@@ -750,10 +739,9 @@ app.get('/', async (req, res) => {const log=false;
         }, { sort, limit }
       )
       const charging_rows = await charging_cursor.toArray()
-      //console.log(charging_rows)
+      //console.log("charging_rows",charging_rows);
       const charging_user = charging_rows[0]  //get charging user
-      console.log("charging_user");
-      console.log(charging_rows);
+      console.log("charging_user",charging_rows);
 
       let charge_finish_time;
       if (charging_user === undefined) charge_finish_time = 0
@@ -770,8 +758,7 @@ app.get('/', async (req, res) => {const log=false;
         charger_free_time += queue_user["charge duration"] * 60 * 1000   // +=係累計咁解
         queueNum += 1;
       }
-      console.log("charge_finish_time");
-      console.log(charge_finish_time);
+      console.log("charge_finish_time",charge_finish_time);
       // console.log([output[0], queueNum, charger_free_time, output[3]]);
       res.send([output[0], queueNum, charger_free_time, output[3],predicted_moved_time]);
       console.log([output[0], queueNum, charger_free_time, output[3],predicted_moved_time]);
@@ -792,9 +779,9 @@ app.post("/register", async (req, resp) => {const log = false;
   console.log('post"/register"')
   if (log) console.log('app.post("/register")' + req.url);
   if (log) console.log('app.post("/register")' + decodeURI(req.url));
-  // if(log)console.log(req);
+  // if(log)console.log("req:",req);
   var params = new URLSearchParams(req.url.split("?")[1]);
-  if (log) console.log(params);
+  if (log) console.log("params:", params);
   let docsInserted;
   try {
     let objectToInsert = {};
@@ -803,14 +790,13 @@ app.post("/register", async (req, resp) => {const log = false;
       objectToInsert[index] = eval(part);
       if (log) console.log(index + ":" + objectToInsert[index]);
     });
-    console.log("objectToInsert")
-    console.log(objectToInsert);
+    console.log("objectToInsert",objectToInsert)
     if(objectToInsert["Parking Space Num"]===undefined 
       || objectToInsert["Parking Space Num"]<1
       || objectToInsert["Parking Space Num"]>11
     )return;
     const result = await collection.insertOne(objectToInsert);
-    if (log) console.log(result);
+    if (log) console.log("result:", result);
     docsInserted = result.insertedId;
     if (log) console.log("docsInserted:" + docsInserted);
     resp.send(docsInserted);
@@ -840,8 +826,7 @@ app.post("/register", async (req, resp) => {const log = false;
       }, { sort, limit }
     )
     const crr_rows = await crr_cursor.toArray()
-    console.log("close_rows")
-    console.log(crr_rows)
+    console.log("close_rows",crr_rows)
     const crr_user = crr_rows[0]
     if(
       /**/crr_user/**/                  !==void 0
@@ -849,8 +834,7 @@ app.post("/register", async (req, resp) => {const log = false;
       &&  crr_user["charge duration"]   ===void 0
       &&  crr_user["start time"]        ===void 0
     ){
-      console.log("deletedeletedeletedeletedeletedeletedeletedeletedeletedeletedeletedeletedeletedelete")
-      console.log(async_id_symbol);
+      console.log(async_id_symbolm,"deletedeletedeletedeletedeletedeletedeletedeletedeletedeletedeletedeletedeletedelete")
       reload_admin(_id);
       collection.deleteOne({"_id": new ObjectId(_id)});
     }
@@ -870,9 +854,9 @@ app.post("/selected", async (req, resp) => {const log = true;
   console.log('post"/selected"')
   if (log) console.log('app.post("/selected")' + req.url);
   if (log) console.log('app.post("/selected")' + decodeURI(req.url));
-  // if(log)console.log(req);
+  // if(log)console.log("req:",req);
   var params = new URLSearchParams(req.url.split("?")[1]);
-  if (log) console.log(params);
+  if (log) console.log("params:", params);
   try {
     let filter = {};
     let objectToInsert = {};
@@ -893,7 +877,7 @@ app.post("/selected", async (req, resp) => {const log = true;
       },
       { upsert: false },
     );
-    if (log) console.log(result);
+    if (log) console.log("result:", result);
     resp.send(result);
     if (timer._destroyed) {
       queue_shift();
@@ -919,7 +903,7 @@ app.post("/cancal", async (req, resp) => {const log = false;
   if (log) console.log('app.post("/cancal")' + req.url);
   if (log) console.log('app.post("/cancal")' + decodeURI(req.url));
   var params = new URLSearchParams(req.url.split("?")[1]);
-  if (log) console.log(params);
+  if (log) console.log("params:", params);
   let filter = {};
   params.forEach(function (part, index, theArray) {
     if (log) console.log(index + ":" + part);
@@ -927,16 +911,15 @@ app.post("/cancal", async (req, resp) => {const log = false;
     else filter[index] = eval(part);
     if (log) console.log(index + ":" + filter[index]);
   });
-  if (log) console.log("filter");
-  if (log) console.log(filter);
+  if (log) console.log("filter",filter);
   let new_charge_duration = 0;
   let new_start_time;
   const cursor = collection.find(filter);
   const rows = await cursor.toArray();
-  if (log) console.log(rows);
+  if (log) console.log("rows",rows);
   if (!(rows[0]["start time"] === undefined)) {
     const charged_time = (new Date(Date.now()).getTime() - new Date(rows[0]["start time"]).getTime()) / 1000 / 60;
-    if (log) console.log(charged_time);
+    if (log) console.log("charged_time", charged_time);
     if (charged_time > rows[0]["charge duration"]) {
       return;
     }
@@ -944,7 +927,7 @@ app.post("/cancal", async (req, resp) => {const log = false;
     new_start_time = rows[0]["start time"];
   } else {
     const now = new Date(Date.now());
-    if (log) console.log(now);
+    if (log) console.log("now", now);
     new_start_time = now;
   }
   const result = await collection.updateOne(
@@ -957,7 +940,7 @@ app.post("/cancal", async (req, resp) => {const log = false;
     },
     { upsert: false },
   );
-  if (log) console.log(result);
+  if (log) console.log("result", result);
   resp.send(result);
   queue_shift();
 });
@@ -976,18 +959,18 @@ async function queue_shift(exception=void 0) {console.log("queue_shiftqqqqqqqqqq
     }, { sort, limit }
   )
   const charging_rows = await charging_cursor.toArray()
-  if(log)console.log(charging_rows)
+  if(log)console.log("charging_rows",charging_rows);
   const charging_user = charging_rows[0]  //get charging user
   var user_who_need_to_charge = { "Parking Space Num": 0, "charge duration": null }
   let remaining_time = -1   //配合196 logic
   let there_are_queuing = false
   if (!(charging_user === undefined)) {
     remaining_time = charging_user["start time"].getTime() + charging_user["charge duration"] * 1000 * 60 - (Date.now())
-    // if(log)console.log((remaining_time))
+    // if(log)console.log("remaining_time",remaining_time);
     // if(log)console.log(charging_user["start time"].getTime())
     // if(log)console.log(charging_user["charge duration"])
-    // if(log)console.log(Date.now())
-    // if(log)console.log(user_who_need_to_charge)
+    // if(log)console.log("Date.now()",Date.now())
+    // if(log)console.log("user_who_need_to_charge",user_who_need_to_charge);
   }
   if (remaining_time >= 0) {
     queue_Interval = remaining_time
@@ -1003,15 +986,15 @@ async function queue_shift(exception=void 0) {console.log("queue_shiftqqqqqqqqqq
     }
     )
     const queue_rows = await queue_cursor.toArray();  //.toArray相等於Ctrl C 然後Ctrl V落去queue_rows度 
-    if(log)console.log(queue_rows)       //queue_rows係排緊隊ga人ga訊息
+    if(log)console.log("queue_rows",queue_rows)       //queue_rows係排緊隊ga人ga訊息
     if (queue_rows[0] != undefined) {
       there_are_queuing = true
       user_who_need_to_charge = queue_rows[0]
       queue_Interval = user_who_need_to_charge['charge duration'] * 1000 * 60
     }
   }
-  if(log)console.log(millis_to_time_String(queue_Interval))
-  //if(log)console.log(user_who_need_to_charge)
+  if(log)console.log("queue_Interval",millis_to_time_String(queue_Interval))
+  //if(log)console.log("user_who_need_to_charge",user_who_need_to_charge);
   let reloaded_client=0;
   let retry_reload_interval=setInterval(()=>{},10)
   clearInterval(retry_reload_interval);
@@ -1035,7 +1018,7 @@ async function queue_shift(exception=void 0) {console.log("queue_shiftqqqqqqqqqq
       },
       { upsert: false },
     );
-    /*if(log)*/console.log(result)
+    /*if(log)*/console.log("result",result);
     console.log("user_who_need_to_charge",user_who_need_to_charge)
     // reload_all_client(_id=String(user_who_need_to_charge["_id"]))
     send_to_client("message","fetchData",_id=String(user_who_need_to_charge["_id"]))
@@ -1051,7 +1034,7 @@ async function call_charger_move_to(spot,_id = void 0) {//added ,_id = void 0
   // console.log(`http://${charger_IPV4}/control/${command}`);
 
   // const result = await fetch(`http://${charger_IPV4}/control/${command}`);
-  // console.log(result);
+  // console.log("result",result);
   const index_loc_msg_vaild_time=Date.now();
   send_to_index_loc("call_charger_move_to",spot);
   clearIntervals(charger_moving_intervals);
@@ -1075,14 +1058,13 @@ async function call_charger_move_to(spot,_id = void 0) {//added ,_id = void 0
       };
     }, 2000));
   });
-  console.log("need_wait");
-  console.log(need_wait);
-  console.log(millis_to_time_String(need_wait));
+  console.log("need_wait",need_wait);
+  console.log("millis_to_time_String(need_wait)",millis_to_time_String(need_wait));
   predicted_moved_time = Date.now()+(isNaN(need_wait)?0:need_wait);
-  console.log(Date.now());
-  console.log(millis_to_time_String(Date.now()));
-  console.log(predicted_moved_time);
-  console.log(millis_to_time_String(predicted_moved_time));
+  console.log("Date.now()",Date.now());
+  console.log("millis_to_time_String(Date.now())",millis_to_time_String(Date.now()));
+  console.log("predicted_moved_time",predicted_moved_time);
+  console.log("millis_to_time_String(predicted_moved_time)",millis_to_time_String(predicted_moved_time));
   // last_queue_shift=Date.now();
   if(_id!==void 0)send_to_client("message","fetchData",_id=_id)//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   console.log("sleeping");
@@ -1096,7 +1078,7 @@ async function call_charger_move_to(spot,_id = void 0) {//added ,_id = void 0
       fetch_count++;
       // const is_charger_complete_move = await fetch(`http://${charger_IPV4}/is_charger_complete_move`);
       // if(charger_moving_interval.destroyed)return;
-      // console.log(is_charger_complete_move.status)
+      // console.log("is_charger_complete_move.status",is_charger_complete_move.status);
       // isComplete_list.push(await (await is_charger_complete_move.blob()).text() === "1");
       // const isComplete = isComplete_list.some(a=>a);
       const isComplete = (Date.now()-predicted_moved_time>0);
