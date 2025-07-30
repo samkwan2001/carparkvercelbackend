@@ -489,19 +489,25 @@ function send_to_index_loc(event,data){
 };
 let index_loc_msg_rev_time=0;
 let need_wait=0;
+let charger_is_moving_to_spot=0;
 app.get("/index_loc/push", (req, res)=>{const log=true;
   console.log('get"/index_loc/push"')
+  pack_is_available=true;
+  send_pack_is_available();
   if (log) console.log('app.get("/index_loc/push")' + req.url);
   if (log) console.log('app.get("/index_loc/push")' + decodeURI(req.url));
   // if(log)console.log(req);
   var params = new URLSearchParams(req.url.split("?")[1]);
   if (log) console.log(params);
+  if(params.get("spot")!==void 0){
+    charger_is_moving_to_spot=parseInt(params.get("spot"));
+  }
   if(params.get("need_wait")!==void 0){
     need_wait=parseInt(params.get("need_wait"));
-    console.log({"need_wait":need_wait});
     index_loc_msg_rev_time=Date.now();
-    console.log({"index_loc/push":{"index_loc_msg_rev_time":index_loc_msg_rev_time}});
   }
+    console.log({"need_wait":need_wait});
+    console.log({"index_loc/push":{"index_loc_msg_rev_time":index_loc_msg_rev_time}});
   res.send("OK");
 })
 app.get("/admin_debug.html",(req,res)=>{console.log("get /admin_debug :"+req.url);
@@ -950,7 +956,7 @@ app.post("/cancal", async (req, resp) => {const log = false;
 
 // 開始充電的路由（更新 start time）
 async function queue_shift(exception=void 0) {console.log("queue_shiftqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq");
-  const log=false;
+  const log=true;
   clearInterval(timer)
   var queue_Interval = null
   const limit = 1
