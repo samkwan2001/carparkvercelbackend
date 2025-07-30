@@ -416,8 +416,10 @@ function send_pack_is_available(...args){
 }
 _5min_test=void 0;
 index_pub_event_close_Timeout=setTimeout(()=>{});
+let index_pub_event_comment_interval=setInterval(()=>{})
 app.get("/index_pub/event", (req, res)=>{console.log(req.url);
   clearTimeout(index_pub_event_close_Timeout);
+  clearInterval(index_pub_event_comment_interval);
   pack_is_available=true;
   res.setHeader("Access-Control-Allow-Origin","*");
   res.setHeader('Content-Type', 'text/event-stream');
@@ -426,7 +428,7 @@ app.get("/index_pub/event", (req, res)=>{console.log(req.url);
   index_loc_res=res;
   let loss_count=0;
   let last_comment_time=0;
-  let interval=setInterval(function(){
+  index_pub_event_comment_interval=setInterval(function(){
     res.write("event: comment\n");
     res.write("data: keep connect comment\n\n",function(e){
       if(!e)pack_is_available=true;
@@ -452,11 +454,11 @@ app.get("/index_pub/event", (req, res)=>{console.log(req.url);
     //   send_pack_is_available();
     // });
   },15000);
-  let timeout = setTimeout(()=>{
-    console.log("reconnect /index_pub/event")
-    res.write("event: reconnect\n");
-    res.write("data:" + String(0) + "\n\n",(e)=>{console.log(e);res.end()});
-  },3*60*1000);
+  // let timeout = setTimeout(()=>{
+  //   console.log("reconnect /index_pub/event")
+  //   res.write("event: reconnect\n");
+  //   res.write("data:" + String(0) + "\n\n",(e)=>{console.log(e);res.end()});
+  // },3*60*1000);
   req.on("close",()=>{
     clearInterval(interval);
     clearTimeout(timeout);
