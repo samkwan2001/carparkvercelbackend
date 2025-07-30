@@ -84,7 +84,6 @@ console.log = (...data) => {
     }
     callerName = callerlist.reverse().join(" -> ");
     callerName = `<${callerName}>`;
-    console.log(callerName);
   
   data=data.map(function(item) {try {return JSON.parse(item);} catch(e){return `*${item}*`;}})
     if (console_log_res !== void 0 && !console_log_res.destroyed) {
