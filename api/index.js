@@ -69,26 +69,22 @@ console.log = (...data) => {
     let callerlist = [];
     try { throw new Error(); }
     catch (e) { 
-        var re = /(\w+)@|at (.*?) \(/g
-        var fileNamePattern = /\((\S+)\)/g;
         var st = e.stack
-        var m;
-        re.exec(st)
-        var fileName_result=fileNamePattern.exec(st)
-        var fileName=fileName_result[1].split(":")[0]+":"+fileName_result[1].split(":")[1];
-        var lineNumber=fileName_result[1].split(":")[2];
-        while(1){
-            var m = re.exec(st);
-            var crrfileName_result=fileNamePattern.exec(st)
-            var crrfileName=crrfileName_result[1].split(":")[0]+":"+crrfileName_result[1].split(":")[1];
-            var lineNumber=crrfileName_result[1].split(":")[2];
-            if(crrfileName!=fileName) break;
-            callerName = (m?m[1] || m[2]:"unknown");
+        st=(st).split("\n")
+        for (let i = 0; i < st.length; i++) {
+            var callerNamePattern = /(\w+)@|at (.*?) \(/g;
+            var fileNamePattern = /\((\S+)\)/g;
+            var flieNameResult = fileNamePattern.exec(st[i]);
+            if (!flieNameResult) continue;
+            var lineNumber=flieNameResult[1].split(":")[2];
+            var callerNameResult = callerNamePattern.exec(st[i]);
+            callerName = callerNameResult ? callerNameResult[1] || callerNameResult[2] : "unknown";
             callerlist.push(`${callerName}:${lineNumber}`);
         }
     }
     callerName = callerlist.reverse().join(" -> ");
     callerName = `<${callerName}>`;
+    console.log(callerName);
   
   data=data.map(function(item) {try {return JSON.parse(item);} catch(e){return `*${item}*`;}})
     if (console_log_res !== void 0 && !console_log_res.destroyed) {
