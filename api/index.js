@@ -66,7 +66,7 @@ console.log = (...data) => {
   data=data.map(function(item) {try {return JSON.parse(item);} catch(e){return `*${item}*`;}})
     if (console_log_res !== void 0 && !console_log_res.destroyed) {
         console_log_res.write("event: message\n");
-        console_log_res.write("data:" + (data.join("|\n|")).replace("\n\n"," \n ") + "\n\n");
+        console_log_res.write("data:" + (data.join("|/|")).replace("\n\n"," \n ") + "\n\n");
     }
     log(...data);
 };
@@ -450,7 +450,7 @@ app.get("/index_pub/event", (req, res)=>{console.log(req.url);
     console.log("reconnect /index_pub/event")
     res.write("event: reconnect\n");
     res.write("data:" + String(0) + "\n\n",(e)=>{console.log(e);res.end()});
-  },3*60*1000);
+  },30*1000);
   req.on("close",()=>{
     clearInterval(interval);
     clearTimeout(timeout);
@@ -1032,7 +1032,7 @@ async function queue_shift(exception=void 0) {console.log("queue_shiftqqqqqqqqqq
     // reload_all_client(_id=String(user_who_need_to_charge["_id"]))
     send_to_client("message","fetchData",_id=String(user_who_need_to_charge["_id"]))
     timer = setInterval(queue_shift, queue_Interval)
-    //if(log)console.log("abc"+queue_Interval)
+    if(log)console.log("next queue_shift"+queue_Interval)
   }
 }
 let charger_moving_intervals=[setInterval(()=>{},10)]
