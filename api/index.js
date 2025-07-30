@@ -64,15 +64,31 @@ let console_log_res = void 0;
 log = console.log;
 console.log = (...data) => {
   
-  var callerName;
+  
+    var callerName;
+    let callerlist = [];
     try { throw new Error(); }
     catch (e) { 
-        var re = /(\w+)@|at (\w+) \(/g, st = e.stack, m;
-        re.exec(st), m = re.exec(st);
-        if (m) 
-        callerName = m[1] || m[2];
-        else callerName = "unknown";
+        var re = /(\w+)@|at (.*?) \(/g
+        var fileNamePattern = /\((\S+)\)/g;
+        var st = e.stack
+        var m;
+        re.exec(st)
+        var fileName_result=fileNamePattern.exec(st)
+        var fileName=fileName_result[1].split(":")[0]+":"+fileName_result[1].split(":")[1];
+        var lineNumber=fileName_result[1].split(":")[2];
+        while(1){
+            var m = re.exec(st);
+            var crrfileName_result=fileNamePattern.exec(st)
+            var crrfileName=crrfileName_result[1].split(":")[0]+":"+crrfileName_result[1].split(":")[1];
+            var lineNumber=crrfileName_result[1].split(":")[2];
+            if(crrfileName!=fileName) break;
+            callerName = (m?m[1] || m[2]:"unknown");
+            callerlist.push(`${callerName}:${lineNumber}`);
+        }
     }
+    callerName = "callerlist: ", callerlist.reverse().join(" -> ");
+    callerName = `<${callerName}>`;
   
   data=data.map(function(item) {try {return JSON.parse(item);} catch(e){return `*${item}*`;}})
     if (console_log_res !== void 0 && !console_log_res.destroyed) {
