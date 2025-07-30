@@ -87,7 +87,7 @@ console.log = (...data) => {
             callerlist.push(`${callerName}:${lineNumber}`);
         }
     }
-    callerName = "callerlist: ", callerlist.reverse().join(" -> ");
+    callerName = callerlist.reverse().join(" -> ");
     callerName = `<${callerName}>`;
   
   data=data.map(function(item) {try {return JSON.parse(item);} catch(e){return `*${item}*`;}})
