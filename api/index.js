@@ -1015,8 +1015,8 @@ async function queue_shift(exception=void 0) {console.log("queue_shiftqqqqqqqqqq
   last_queue_shift = Date.now()
   retry_reload_interval=setInterval(retry_reload,500)
   await call_charger_move_to(user_who_need_to_charge["Parking Space Num"],_id=user_who_need_to_charge["_id"])  // TODO control fung's machine
-  console.log("process returned to queue_shift")
-  if (there_are_queuing) {
+  console.log("process returned to queue_shift and there_are_queuing:",there_are_queuing,charging_user !== undefined);
+  if (there_are_queuing||charging_user !== undefined) {//!---------------------------------------
     const now = new Date(Date.now());
     const result = await collection.updateOne(
       user_who_need_to_charge,
@@ -1028,7 +1028,7 @@ async function queue_shift(exception=void 0) {console.log("queue_shiftqqqqqqqqqq
       { upsert: false },
     );
     /*if(log)*/console.log(result)
-    console.log(user_who_need_to_charge)
+    console.log("user_who_need_to_charge",user_who_need_to_charge)
     // reload_all_client(_id=String(user_who_need_to_charge["_id"]))
     send_to_client("message","fetchData",_id=String(user_who_need_to_charge["_id"]))
     timer = setInterval(queue_shift, queue_Interval)
