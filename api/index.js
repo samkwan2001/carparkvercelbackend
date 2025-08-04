@@ -28,7 +28,7 @@ app.use(express.json());
 
 // 資料庫連接資訊
 // const url = 'mongodb://localhost:27017/';
-const url = process.env.MONGODB_URI;
+const url = process.env.MONGODB_URI||'mongodb://localhost:27017/';
 
 const dbName = 'carpark';
 const collectionName = 'carparkcollection';
@@ -79,13 +79,14 @@ console.log = (...data) => {
             var lineNumber=flieNameResult[1].split(":")[2];
             var callerNameResult = callerNamePattern.exec(st[i]);
             callerName = callerNameResult ? callerNameResult[1] || callerNameResult[2] : "unknown";
+            if(i==1&&callerName=="console.log")continue;
             callerlist.push(`${callerName}:${lineNumber}`);
         }
     }
     callerName = callerlist.reverse().join(" -> ");
     callerName = `<${callerName}>`;
   
-  data=data.map(function(item) {try {return JSON.parse(item);} catch(e){return `*${item}*`;}})
+  data=data.map(function(item) {try {return JSON.stringify(item);} catch(e){return `*${item}*`;}})
     if (console_log_res !== void 0 && !console_log_res.destroyed) {
         console_log_res.write("event: message\n");
         console_log_res.write("data:" +callerName+ (data.join("|/|")).replace("\n\n"," \n ") + "\n\n");
@@ -455,13 +456,13 @@ app.get("/index_pub/event", (req, res)=>{console.log("req.url",req.url);
     // res.write("data: keep connect comment\n\n",function(e){
     //   console.log("comment to /index_pub/event",e);
     //   if(e&&(loss_count++)>3){//not success and count and check count>3
-    //     clearInterval(interval);
+    //     clearInterval(index_pub_event_comment_interval);
     //     res.end();
     //     pack_is_available=false;
     //     console.log(`loss_count=${loss_count}`,e);
     //   }else if(e){//not success
     //     console.log(`pack_is_available=${pack_is_available}, retry on 1000ms`)
-    //     setTimeout(()=>{interval._onTimeout();console.log("retry");},1000);
+    //     setTimeout(()=>{index_pub_event_comment_interval._onTimeout();console.log("retry");},1000);
     //   }else if(!e){//success
     //     loss_count=0;//reset count
     //     pack_is_available=true;
@@ -477,8 +478,8 @@ app.get("/index_pub/event", (req, res)=>{console.log("req.url",req.url);
   //   res.write("data:" + String(0) + "\n\n",(e)=>{console.log("e",e);res.end()});
   // },3*60*1000);
   req.on("close",()=>{
-    clearInterval(interval);
-    clearTimeout(timeout);
+    clearInterval(index_pub_event_comment_interval);
+    clearTimeout(index_pub_event_close_Timeout);
     index_pub_event_close_Timeout=setTimeout(function(){
       console.log("/index_pub/event close timeout");
       pack_is_available=false;
@@ -1071,7 +1072,7 @@ async function call_charger_move_to(spot,_id = void 0) {//added ,_id = void 0
       if (completed) {
           send_pack_is_available();
           resolve(); // 在完成後解析 Promise
-      }else if(Date.now()-start>60000){
+      }else if(Date.now()-start>17000){
         start=Date.now();
         send_to_index_loc("call_charger_move_to",spot);
       }else{
