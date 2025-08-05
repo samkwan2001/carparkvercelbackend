@@ -41,6 +41,7 @@ const InQueue = 1;
 const InUse = 2;
 const Finish = 3;
 const not_this_user = 4;
+const Already=1;
 
 let timer = setInterval(async () => {
   clearInterval(timer);
@@ -1027,21 +1028,25 @@ async function queue_shift(exception=void 0) {console.log("queue_shiftqqqqqqqqqq
   }
   last_queue_shift = Date.now()
   retry_reload_interval=setInterval(retry_reload,500)
-  await call_charger_move_to(user_who_need_to_charge["Parking Space Num"],_id=user_who_need_to_charge["_id"])  // TODO control fung's machine
+  const status= await call_charger_move_to(user_who_need_to_charge["Parking Space Num"],_id=user_who_need_to_charge["_id"])  // TODO control fung's machine
   console.log("process returned to queue_shift and user_who_need_to_charge.charge duration:",user_who_need_to_charge["charge duration"]);
   if (there_are_queuing||user_who_need_to_charge["charge duration"] !== null) {//!---------------------------------------
-    const now = new Date(Date.now());
-    const result = await collection.updateOne(
-      user_who_need_to_charge,
-      {
-        "$set": {
-          "start time": now,
-        }
-      },
-      { upsert: false },
-    );
-    /*if(log)*/console.log("result",result);
-    console.log("user_who_need_to_charge",user_who_need_to_charge)
+    skip=false;
+    if(status==Already&&user_who_need_to_charge["_id"]==charging_user["_id"])skip=true;
+    if(!skip){
+      const now = new Date(Date.now());
+      const result = await collection.updateOne(
+        user_who_need_to_charge,
+        {
+          "$set": {
+            "start time": now,
+          }
+        },
+        { upsert: false },
+      );
+      /*if(log)*/console.log("result",result);
+      console.log("user_who_need_to_charge",user_who_need_to_charge)
+    }
     // reload_all_client(_id=String(user_who_need_to_charge["_id"]))
     send_to_client("message","fetchData",_id=String(user_who_need_to_charge["_id"]))
     timer = setInterval(queue_shift, queue_Interval)
@@ -1089,6 +1094,7 @@ async function call_charger_move_to(spot,_id = void 0) {//added ,_id = void 0
   console.log("millis_to_time_String(predicted_moved_time)",millis_to_time_String(predicted_moved_time));
   // last_queue_shift=Date.now();
   if(_id!==void 0)send_to_client("message","fetchData",_id=_id)//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  if(need_wait==0)return Already;
   console.log("sleeping");
   // await sleep(need_wait);
   console.log("sleeped-----------------------------------------------------------------------------------------------------------------------");
