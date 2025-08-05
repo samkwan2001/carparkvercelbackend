@@ -210,7 +210,7 @@ app.get('/events', (req, res) => {console.log("get /events :"+req.url);
   console.log(urlparams.get("_id") != '"undefined"');
   console.log(`${urlparams.get("_id")}!=${'"undefined"'}`);
   console.log("---------------------------------------")
-  if (urlparams.get("_id")&&urlparams.get("_id") != '"undefined"') {
+  if (urlparams.get("_id")&&urlparams.get("_id") != '"undefined"'&&urlparams.get("_id").length==26) {
     query = { _id: new mongodb.ObjectId(urlparams.get("_id").replaceAll("\"", "")) };
   }
   async_id_symbol=res.req.client[find_symbol(res.req.client,"async_id_symbol")]
@@ -257,7 +257,7 @@ app.get('/events', (req, res) => {console.log("get /events :"+req.url);
     console.log("async_id_symbol",async_id_symbol);
     reload_admin();
     console.log("reload_admin");
-    if(_id=="undefined")return;
+    if(_id=="undefined"||_id.length!=26)return;
     const limit = 1
     let sort = { "start time": -1 }
     const crr_cursor = collection.find(
@@ -601,7 +601,7 @@ app.get('/', async (req, res) => {const log=false;
     console.log(`${urlparams.get("_id")}!=${'"undefined"'}`);
     console.log("---------------------------------------")
     let this_user = undefined;
-    if (urlparams.get("_id") != '"undefined"') {
+    if (urlparams.get("_id") != '"undefined"'&&urlparams.get("_id").length==26) {
       query = { _id: new mongodb.ObjectId(urlparams.get("_id").replaceAll("\"", "")) };
       console.log("query",query)
       // 執行查詢
@@ -727,6 +727,9 @@ app.get('/', async (req, res) => {const log=false;
     }
     else if ((new Date(this_user["start time"]).getTime() + (this_user["charge duration"] * 60 * 1000)) - new Date(Date.now()).getTime() < 0) {
       //Finish
+      console.log(`(${new Date(this_user["start time"]).getTime()} + ${(this_user["charge duration"] * 60 * 1000)}) - ${new Date(Date.now()).getTime()}`);
+      console.log(`${(new Date(this_user["start time"]).getTime() + (this_user["charge duration"] * 60 * 1000))} - ${new Date(Date.now()).getTime()}`);
+      console.log((new Date(this_user["start time"]).getTime() + (this_user["charge duration"] * 60 * 1000)) - new Date(Date.now()).getTime());
       res.send([Finish, void 0, void 0, carNum]);
       console.log([Finish, void 0, void 0, carNum]);
       return
@@ -798,7 +801,7 @@ app.get('/', async (req, res) => {const log=false;
 });
 
 // 添加新記錄的路由（用於首次使用）
-app.post("/register", async (req, resp) => {const log = false;
+app.post("/register", async (req, resp) => {const log = true;
   console.log('post"/register"')
   if (log) console.log('app.post("/register")' + req.url);
   if (log) console.log('app.post("/register")' + decodeURI(req.url));
@@ -821,8 +824,22 @@ app.post("/register", async (req, resp) => {const log = false;
     const result = await collection.insertOne(objectToInsert);
     if (log) console.log("result:", result);
     docsInserted = result.insertedId;
-    if (log) console.log("docsInserted:" + docsInserted);
+    if (log) console.log("docsInserted:" + docsInserted,typeof docsInserted);
+    // resp.send(docsInserted);
+    filter={"_id":new ObjectId(docsInserted)}
+    objectToInsert={"Verification code":`${docsInserted}`.substring(0,10)}
+    console.log("filter",filter)
+    console.log("objectToInsert",objectToInsert)
+    const update_result = await collection.updateOne(
+      filter,
+      {
+        "$set": objectToInsert
+      },
+      { upsert: false },
+    );
+    console.log("update_result:",update_result)
     resp.send(docsInserted);
+    
     reload_admin()
     // if (timer._destroyed) {
     //   queue_shift();
@@ -868,7 +885,43 @@ app.post("/register", async (req, resp) => {const log = false;
 
 
 
-
+app.post("/Verification", async (req, resp) => {const log = true;
+  console.log('post"/Verification"')
+  if (log) console.log('app.post("/Verification")' + req.url);
+  if (log) console.log('app.post("/Verification")' + decodeURI(req.url));
+  // if(log)console.log("req:",req);
+  var params = new URLSearchParams(req.url.split("?")[1]);
+  if (log) console.log("params:", params);
+  let old_user_id;
+  // try {
+    Verification_code=params.get("Verification code")
+    console.log("Verification_code",Verification_code)
+    const limit = 1
+    var sort = { "start time": -1 }// sort by _id; -1==>倒序
+    const this_cursor = collection.find(
+      {
+        "Verification code": Verification_code
+      }, { sort, limit }
+    )
+    const this_rows = await this_cursor.toArray()
+    if(log)console.log("this_rows",this_rows);
+    const this_user = this_rows[0]  //get charging user
+    old_user_id = this_user?this_user["_id"]:void 0;
+    if (log) console.log("old_user_id:" + old_user_id);
+    resp.send(old_user_id);
+    reload_admin()
+    // if (timer._destroyed) {
+    //   queue_shift();
+    // }
+  // }
+  // catch {
+  //   err => {
+  //     if (log) console.log("err:" + err);
+  //     resp.status(500).send(err);
+  //   }
+  // }
+  
+});
 
 
 
@@ -1032,7 +1085,7 @@ async function queue_shift(exception=void 0) {console.log("queue_shiftqqqqqqqqqq
   console.log("process returned to queue_shift and user_who_need_to_charge.charge duration:",user_who_need_to_charge["charge duration"]);
   if (there_are_queuing||user_who_need_to_charge["charge duration"] !== null) {//!---------------------------------------
     skip=false;
-    if(status==Already&&user_who_need_to_charge["_id"]==charging_user["_id"])skip=true;
+    if(status==Already&&(!charging_user||user_who_need_to_charge["_id"]==charging_user["_id"]))skip=true;
     if(!skip){
       const now = new Date(Date.now());
       const result = await collection.updateOne(
