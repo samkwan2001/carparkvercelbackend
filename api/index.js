@@ -240,7 +240,7 @@ app.get('/events', (req, res) => {console.log("get /events :"+req.url);
     }
   }
   console.log("clients.length",clients.length);
-  send_pack_is_available();
+  send_pack_is_available("app.get('/events'");
   fs.writeFile('.count.json', String(clients.length), 'utf8',()=>{});
   const _id=urlparams.get("_id").replaceAll("\"", "")
   const handle_close=async(...args)=> {
@@ -427,11 +427,11 @@ app.get("/admin_debug_fetch",async(req,res)=>{console.log("get /admin_debug_fetc
 let last_event_data={}
 let index_loc_res=void 0;
 let pack_is_available=false;
-app.get("/is_pack_available", function(req, res){res.send(pack_is_available);send_pack_is_available()});
+app.get("/is_pack_available", function(req, res){res.send(pack_is_available);send_pack_is_available(`app.get("/is_pack_available"`)});
 function send_pack_is_available(...args){
   const m=pack_is_available?"pack_is_available":"pack_not_available"
   send_to_client("message",m);
-  console.log(`send_to_client ${m}`);
+  console.log(`send_to_client ${m}`,args);
 }
 _5min_test=void 0;
 index_pub_event_close_Timeout=setTimeout(()=>{});
@@ -452,7 +452,7 @@ app.get("/index_pub/event", (req, res)=>{console.log("req.url",req.url);
     res.write("data: keep connect comment\n\n",function(e){
       if(!e)pack_is_available=true;
       else pack_is_available=false;
-      send_pack_is_available();
+      send_pack_is_available("index_pub_event_comment_interval");
     })
     // res.write("data: keep connect comment\n\n",function(e){
     //   console.log("comment to /index_pub/event",e);
@@ -484,7 +484,7 @@ app.get("/index_pub/event", (req, res)=>{console.log("req.url",req.url);
     index_pub_event_close_Timeout=setTimeout(function(){
       console.log("/index_pub/event close timeout");
       pack_is_available=false;
-      send_pack_is_available();
+      send_pack_is_available("index_pub_event_close_Timeout");
     },3000);
     console.log("/index_pub/event close");
   });
@@ -520,7 +520,7 @@ let charger_is_moving_to_spot=0;
 app.get("/index_loc/push", (req, res)=>{const log=true;
   console.log('get"/index_loc/push"')
   pack_is_available=true;
-  send_pack_is_available();
+  send_pack_is_available(`app.get("/index_loc/push"`);
   if (log) console.log('app.get("/index_loc/push")' + req.url);
   if (log) console.log('app.get("/index_loc/push")' + decodeURI(req.url));
   // if(log)console.log("req",req);
@@ -1075,7 +1075,8 @@ async function call_charger_move_to(spot,_id = void 0) {//added ,_id = void 0
     charger_moving_intervals.push(setInterval(async () => {
       const completed = index_loc_msg_vaild_time<index_loc_msg_rev_time;
       if (completed) {
-          send_pack_is_available();
+          send_pack_is_available("call_charger_move_to");
+          clearIntervals(charger_moving_intervals);
           resolve(); // 在完成後解析 Promise
       }else if(Date.now()-start>17000){
         start=Date.now();
