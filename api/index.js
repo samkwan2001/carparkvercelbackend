@@ -9,13 +9,13 @@ const app = express();
 const port = 7000;
 const cors = require("cors");
 var fs = require('fs');
-const path = require('path');
 const { clearInterval } = require('timers');
 let predicted_moved_time=0;
 // app.use(cors());
+const is_wall_c=process.env.is_wall_c;
 app.use(cors({
   origin: [
-    'https://carparktestfrontend-fork.vercel.app', // 換成你Vercel前端網址
+    is_wall_c?'https://carparktestfrontend-wall-c.vercel.app/':'https://carparktestfrontend-fork.vercel.app', // 保證只有一個通道
     'http://localhost:3000', // 測試用
     'http://192.168.31.18:3000', // 測試用
     'http://192.168.137.1:3000', // 測試用
@@ -31,7 +31,7 @@ app.use(express.json());
 const url = process.env.MONGODB_URI||'mongodb://localhost:27017/';
 
 const dbName = 'carpark';
-const collectionName = 'carparkcollection';
+const collectionName = is_wall_c?'carparkcollection-wall-c':'carparkcollection';
 
 let db;
 let collection;
@@ -62,7 +62,7 @@ function clearIntervals(Intervals = []) {
     }
 };
 let console_log_res = void 0;
-log = console.log;
+const log = console.log;
 console.log = (...data) => {
   
   
@@ -170,7 +170,7 @@ function reload_all_client(exception=void 0,_id=void 0) {
       if(client["_id"]=="undefined")return;
       if(_id!=void 0&&client["_id"]!=_id)return;
       client["res"].write("event: message\n");
-      client["res"].write("data:" + "reload" + "\n\n");
+      client["res"].write("data:reload\n\n");
       // client["res"].write("exception:" + exception + "\n\n");
       count++;
     }
@@ -210,10 +210,11 @@ app.get('/events', (req, res) => {console.log("get /events :"+req.url);
   console.log(urlparams.get("_id") != '"undefined"');
   console.log(`${urlparams.get("_id")}!=${'"undefined"'}`);
   console.log("---------------------------------------")
+  let query;
   if (urlparams.get("_id")&&urlparams.get("_id") != '"undefined"'&&urlparams.get("_id").length==26) {
     query = { _id: new mongodb.ObjectId(urlparams.get("_id").replaceAll("\"", "")) };
   }
-  async_id_symbol=res.req.client[find_symbol(res.req.client,"async_id_symbol")]
+  const async_id_symbol=res.req.client[find_symbol(res.req.client,"async_id_symbol")]
   console.log("eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee");
   const user_agent=String(res.req[find_symbol(res.req,"kHeaders")]["user-agent"])
   /**/ if(user_agent.indexOf("Edg")>=0)console.log("Edge");
@@ -300,7 +301,7 @@ app.get('/events', (req, res) => {console.log("get /events :"+req.url);
   if(Date.now() - last_queue_shift < 1000){
     // reload_all_client()
       res.write("event: message\n");
-      res.write("data:" + "fetchData" + "\n\n");
+      res.write("data:fetchData\n\n");
   }
 });
 app.get("/close",async(req,res)=>{console.log("req.url",req.url);
@@ -361,7 +362,7 @@ app.get('/admin_debug_events', (req, res) => {console.log("get /admin_debug_even
     res.write("data:" + String(0) + "\n\n",(e)=>{console.log("e",e);res.end()});
   },3*60*1000);
   req.on("close",()=>{
-    clearInterval(interval);
+    // clearInterval(interval);
     clearTimeout(timeout);
   });
 });
@@ -373,13 +374,7 @@ app.get("/admin_debug_fetch",async(req,res)=>{console.log("get /admin_debug_fetc
   
     rows.forEach((row)=>{
       // console.log("clients",clients)
-      let client=clients.filter((client)=>{
-        // console.log("client._id",client._id)
-        // console.log("String(row._id)",String(row._id))
-        // console.log("client._id==String(row._id)",client._id==String(row._id))
-        if(client._id==String(row._id))
-        return client
-      })
+      let client=clients.filter((client)=>client._id==String(row._id));
       // console.log("client",client)
       const result = {};
       let key;
@@ -433,8 +428,8 @@ function send_pack_is_available(...args){
   send_to_client("message",m);
   console.log(`send_to_client ${m}`,args);
 }
-_5min_test=void 0;
-index_pub_event_close_Timeout=setTimeout(()=>{});
+let _5min_test=void 0;
+let index_pub_event_close_Timeout=setTimeout(()=>{});
 let index_pub_event_comment_interval=setInterval(()=>{})
 app.get("/index_pub/event", (req, res)=>{console.log("req.url",req.url);
   clearTimeout(index_pub_event_close_Timeout);
@@ -827,7 +822,7 @@ app.post("/register", async (req, resp) => {const log = true;
     docsInserted = result.insertedId;
     if (log) console.log("docsInserted:" + docsInserted,typeof docsInserted);
     // resp.send(docsInserted);
-    filter={"_id":new ObjectId(docsInserted)}
+    const filter={"_id":new ObjectId(docsInserted)}
     objectToInsert={"Verification code":`${docsInserted}`.substring(0,10)}
     console.log("filter",filter)
     console.log("objectToInsert",objectToInsert)
@@ -846,12 +841,11 @@ app.post("/register", async (req, resp) => {const log = true;
     //   queue_shift();
     // }
   }
-  catch {
-    err => {
-      if (log) console.log("err:" + err);
-      resp.status(500).send(err);
-    }
+  catch(err){
+    if (log) console.log("err:" + err);
+    resp.status(500).send(err);
   }
+  
   
   setTimeout(async()=>{
     console.log("Timeout");
@@ -895,7 +889,7 @@ app.post("/Verification", async (req, resp) => {const log = true;
   if (log) console.log("params:", params);
   let old_user_id;
   // try {
-    Verification_code=params.get("Verification code")
+    const Verification_code=params.get("Verification code")
     console.log("Verification_code",Verification_code)
     const limit = 1
     var sort = { "start time": -1 }// sort by _id; -1==>倒序
@@ -960,12 +954,11 @@ app.post("/selected", async (req, resp) => {const log = true;
       queue_shift();
     }else send_to_client("message","fetchData")
   }
-  catch {
-    err => {
-      if (log) console.log("err:" + err);
-      resp.status(500).send(err);
-    }
+  catch(err){
+    if (log) console.log("err:" + err);
+    resp.status(500).send(err);
   }
+  
   reload_admin();
 });
 
@@ -1082,10 +1075,10 @@ async function queue_shift(exception=void 0) {console.log("queue_shiftqqqqqqqqqq
   }
   last_queue_shift = Date.now()
   retry_reload_interval=setInterval(retry_reload,500)
-  const status= await call_charger_move_to(user_who_need_to_charge["Parking Space Num"],_id=user_who_need_to_charge["_id"])  // TODO control fung's machine
+  const status= await call_charger_move_to(user_who_need_to_charge["Parking Space Num"],user_who_need_to_charge["_id"])  // TODO control fung's machine
   console.log("process returned to queue_shift and user_who_need_to_charge.charge duration:",user_who_need_to_charge["charge duration"]);
   if (there_are_queuing||user_who_need_to_charge["charge duration"] !== null) {//!---------------------------------------
-    skip=false;
+    let skip=false;
     if(status==Already&&(!charging_user||user_who_need_to_charge["_id"]==charging_user["_id"]))skip=true;
     if(!skip){
       const now = new Date(Date.now());
@@ -1102,7 +1095,7 @@ async function queue_shift(exception=void 0) {console.log("queue_shiftqqqqqqqqqq
       console.log("user_who_need_to_charge",user_who_need_to_charge)
     }
     // reload_all_client(_id=String(user_who_need_to_charge["_id"]))
-    send_to_client("message","fetchData",_id=String(user_who_need_to_charge["_id"]))
+    send_to_client("message","fetchData",String(user_who_need_to_charge["_id"]))
     timer = setInterval(queue_shift, queue_Interval)
     if(log)console.log("next queue_shift"+queue_Interval)
   }
@@ -1148,7 +1141,7 @@ async function call_charger_move_to(spot,_id = void 0) {//added ,_id = void 0
   console.log("predicted_moved_time",predicted_moved_time);
   console.log("millis_to_time_String(predicted_moved_time)",millis_to_time_String(predicted_moved_time));
   // last_queue_shift=Date.now();
-  if(_id!==void 0)send_to_client("message","fetchData",_id=_id)//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  if(_id!==void 0)send_to_client("message","fetchData",_id)//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   if(need_wait==0)return Already;
   console.log("sleeping");
   // await sleep(need_wait);
