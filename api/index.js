@@ -549,6 +549,7 @@ app.get("/qr",(req,res)=>{
   res.send(`<div id="container"></div><script src="https://cdn.jsdelivr.net/npm/qrcodejs2"></script>
 <script>
     var host = "https://carparktestfrontend-fork.vercel.app"
+    var host_wall_c = "https://carparktestfrontend-wall-c.vercel.app"
     // 生成 QR code
     const container = document.getElementById("container");
     container.style.display = "grid";
@@ -556,7 +557,7 @@ app.get("/qr",(req,res)=>{
     container.style.gridTemplateRows = "repeat(4,33.33%)";
     for (let i = 1; i < 12; i++) {
         const qr_div = document.createElement("div");
-        const url = (host + "/" + btoa(i));
+        const url = ((i<=6?host:host_wall_c) + "/" + btoa(i));
         new QRCode(qr_div, url);
         const label = document.createElement("h1");
         label.innerText = i;
