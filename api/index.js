@@ -12,7 +12,7 @@ var fs = require('fs');
 const { clearInterval } = require('timers');
 let predicted_moved_time=0;
 // app.use(cors());
-const is_wall_c=process.env.is_wall_c;
+const is_wall_c=process.env.is_wall_c==="1";
 app.use(cors({
   origin: [
     is_wall_c?'https://carparktestfrontend-wall-c.vercel.app/':'https://carparktestfrontend-fork.vercel.app', // 保證只有一個通道
