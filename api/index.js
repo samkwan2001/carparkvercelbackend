@@ -459,9 +459,11 @@ function send_park_is_available(...args) {
 let _5min_test = void 0;
 let index_pub_event_close_Timeout = setTimeout(() => { });
 let index_pub_event_comment_interval = setInterval(() => { })
+let index_pub_reconnect_Timeout = setTimeout(() => { });
 app.get("/index_pub/event", (req, res) => {
   console.log("req.url", req.url);
   clearTimeout(index_pub_event_close_Timeout);
+  clearTimeout(index_pub_reconnect_Timeout);
   clearInterval(index_pub_event_comment_interval);
   park.is_available = true;
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -497,11 +499,11 @@ app.get("/index_pub/event", (req, res) => {
     //   send_park_is_available();
     // });
   }, 15000);
-  // let timeout = setTimeout(()=>{
-  //   console.log("reconnect /index_pub/event")
-  //   res.write("event: reconnect\n");
-  //   res.write("data:" + String(0) + "\n\n",(e)=>{console.log("e",e);res.end()});
-  // },3*60*1000);
+  index_pub_reconnect_Timeout = setTimeout(()=>{
+    console.log("reconnect /index_pub/event")
+    res.write("event: reconnect\n");
+    res.write("data:" + String(0) + "\n\n",(e)=>{console.log("e",e);res.end()});
+  },3*60*1000);
   req.on("close", () => {
     clearInterval(index_pub_event_comment_interval);
     clearTimeout(index_pub_event_close_Timeout);
