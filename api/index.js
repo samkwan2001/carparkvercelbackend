@@ -15,7 +15,7 @@ let predicted_moved_time=0;
 const is_wall_c=process.env.is_wall_c==="1";
 app.use(cors({
   origin: [
-    is_wall_c?'https://carparktestfrontend-wall-c.vercel.app/':'https://carparktestfrontend-fork.vercel.app', // 保證只有一個通道
+    is_wall_c?'https://carparktestfrontend-wall-c.vercel.app':'https://carparktestfrontend-fork.vercel.app', // 保證只有一個通道
     'http://localhost:3000', // 測試用
     'http://192.168.31.18:3000', // 測試用
     'http://192.168.137.1:3000', // 測試用
@@ -1198,3 +1198,4 @@ async function startServer() {
 }
 
 startServer();
+
