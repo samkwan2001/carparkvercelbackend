@@ -371,58 +371,83 @@ app.get('/admin_debug_events', (req, res) => {
 });
 app.get("/admin_debug_fetch", async (req, res) => {
   console.log("get /admin_debug_fetch :" + req.url);
+  // const rows = await collection.find({}).toArray();
+  // const results = []
+  // rows.forEach((row) => {
+  //   let client = clients.filter((client) => client._id == String(row._id));
+  //   const result = {};
+  //   let key;
+  //   for (key in row) {
+  //     if (row.hasOwnProperty(key)) {
+  //       result[key] = row[key];
+  //     }
+  //   }
+  //   Object.keys(client).forEach(
+  //     (key, index) => {
+  //       console.log(key, index,);
+  //       client = client[key]
+  //     }
+  //   )
+  //   for (key in client) {
+  //     if (key != "res" && client.hasOwnProperty(key)) {
+  //       result[key] = client[key];
+  //     }
+  //   }
+  //   results.push(result);
+  // });
+  // // user have no id
+  // clients.forEach((client) => {
+  //   if (!client.hasOwnProperty("_id") || client["_id"] !== "undefined") { return; }
+  //   const result = {};
+  //   let key;
+  //   for (key in client) {
+  //     if (key != "res" && client.hasOwnProperty(key)) {
+  //       result[key] = client[key];
+  //     }
+  //   }
+  //   results.push(result);
+  // })
+
   const rows = await collection.find({}).toArray();
-  const results = []
-
-
+  const results = [];
 
   rows.forEach((row) => {
-    // console.log("clients",clients)
-    let client = clients.filter((client) => client._id == String(row._id));
-    // console.log("client",client)
-    const result = {};
-    let key;
+    // 使用严格相等比较，并确保类型一致
+    let client = clients.find(client => String(client._id) === String(row._id));
+    const result = { ...row }; // 使用对象展开简化属性复制
 
-    for (key in row) {
-      if (row.hasOwnProperty(key)) {
-        // console.log("appendedapapapapapapapapapapapapapapapapapapapapapap"+key)
-        result[key] = row[key];
-      }
+    if (client) {
+      // 只复制安全的、可序列化的属性
+      Object.keys(client).forEach(key => {
+        // 排除可能包含循环引用的属性
+        if (key !== "res" && key !== "interval" && client.hasOwnProperty(key)) {
+          result[key] = client[key];
+        }
+      });
     }
-    Object.keys(client).forEach(
-      (key, index) => {
-        console.log(key, index,);
-        client = client[key]
-      }
-    )
-    for (key in client) {
-      if (key != "res" && client.hasOwnProperty(key)) {
-        // console.log("appendedapapapapapapapapapapapapapapapapapapapapapap"+key)
-        result[key] = client[key];
-      }
-    }
-
 
     results.push(result);
   });
-  // user have no id
+
+  // 处理没有对应数据库记录的客户端
   clients.forEach((client) => {
-    if (!client.hasOwnProperty("_id") || client["_id"] !== "undefined") { return; }
+    // 检查条件修正：寻找没有_id或_id未在数据库中的客户端
+    if (!client._id || rows.some(row => String(row._id) === String(client._id))) {
+      return;
+    }
+
     const result = {};
-    let key;
-    for (key in client) {
-      if (key != "res" && client.hasOwnProperty(key)) {
-        // console.log("appendedapapapapapapapapapapapapapapapapapapapapapap"+key)
+    Object.keys(client).forEach(key => {
+      if (key !== "res" && key !== "interval" && client.hasOwnProperty(key)) {
         result[key] = client[key];
       }
-    }
+    });
+
     results.push(result);
-  })
+  });
 
-
-
-  res.send(JSON.stringify(results))
-})
+  res.send(JSON.stringify(results))//https://www.doubao.com/chat/19096510861621506
+});
 // const msg_msgNtime=[]
 let last_event_data = {}
 let index_loc_res = void 0;
@@ -499,11 +524,11 @@ app.get("/index_pub/event", (req, res) => {
     //   send_park_is_available();
     // });
   }, 15000);
-  index_pub_reconnect_Timeout = setTimeout(()=>{
+  index_pub_reconnect_Timeout = setTimeout(() => {
     console.log("reconnect /index_pub/event")
     res.write("event: reconnect\n");
-    res.write("data:" + String(0) + "\n\n",(e)=>{console.log("e",e);res.end()});
-  },3*60*1000);
+    res.write("data:" + String(0) + "\n\n", (e) => { console.log("e", e); res.end() });
+  }, 3 * 60 * 1000);
   req.on("close", () => {
     clearInterval(index_pub_event_comment_interval);
     clearTimeout(index_pub_event_close_Timeout);
