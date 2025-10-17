@@ -462,12 +462,17 @@ const park = new Proxy(state, {
   get(target, prop) {
     if (prop === 'is_available') {
       console.log(`获取 is_available 的值: ${target[prop]}`);
+    }else if (prop === 'last_index_loc_comment_cb_time') {
+      console.log(`获取 last_index_loc_comment_cb_time 的值: ${target[prop]}`);
     }
     return target[prop];
   },
   set(target, prop, value) {
     if (prop === 'is_available') {
       console.log(`is_available 被赋值为: ${value}`);
+      // 可以在这里添加额外逻辑，如验证、日志等
+    }else if (prop === 'last_index_loc_comment_cb_time') {
+      console.log(`last_index_loc_comment_cb_time 被赋值为: ${value}`);
       // 可以在这里添加额外逻辑，如验证、日志等
     }
     target[prop] = value; // 执行实际赋值
@@ -485,8 +490,8 @@ let _5min_test = void 0;
 let index_pub_event_close_Timeout = setTimeout(() => { });
 let index_pub_event_comment_interval = setInterval(() => { })
 let index_pub_reconnect_Timeout = setTimeout(() => { });
-let last_index_loc_comment_cb_time=0;
-app.get("/index_loc/comment_cb", function (req,res){last_index_loc_comment_cb_time=Date.now();res.send("ok");})
+park.last_index_loc_comment_cb_time=0;
+app.get("/index_loc/comment_cb", function (req,res){park.last_index_loc_comment_cb_time=Date.now();res.send("ok");})
 app.get("/index_pub/event", (req, res) => {
   console.log("req.url", req.url);
   clearTimeout(index_pub_event_close_Timeout);
@@ -510,8 +515,8 @@ app.get("/index_pub/event", (req, res) => {
     
     res.write("data: keep connect comment\n\n");
     setTimeout(function () {
-      console.log("Date.now()-last_index_loc_comment_cb_time<5000",`${Date.now()}-${last_index_loc_comment_cb_time}<${5000}`);
-      if (Date.now()-last_index_loc_comment_cb_time<5000) park.is_available = true;
+      console.log("Date.now()-last_index_loc_comment_cb_time<5000",`${Date.now()}-${park.last_index_loc_comment_cb_time}<${5000}`);
+      if (Date.now()-park.last_index_loc_comment_cb_time<5000) park.is_available = true;
       else park.is_available = false;
       send_park_is_available("index_pub_event_comment_interval");
     },3000);
