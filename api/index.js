@@ -485,6 +485,8 @@ let _5min_test = void 0;
 let index_pub_event_close_Timeout = setTimeout(() => { });
 let index_pub_event_comment_interval = setInterval(() => { })
 let index_pub_reconnect_Timeout = setTimeout(() => { });
+let last_index_loc_comment_cb_time=0;
+app.get("/index_loc/comment_cb", function (req,res){last_index_loc_comment_cb_time=Date.now();res.send("ok");})
 app.get("/index_pub/event", (req, res) => {
   console.log("req.url", req.url);
   clearTimeout(index_pub_event_close_Timeout);
@@ -500,11 +502,18 @@ app.get("/index_pub/event", (req, res) => {
   let last_comment_time = 0;
   index_pub_event_comment_interval = setInterval(function () {
     res.write("event: comment\n");
-    res.write("data: keep connect comment\n\n", function (e) {
-      if (!e) park.is_available = true;
+    // res.write("data: keep connect comment\n\n", function (e) {
+    //   if (!e) park.is_available = true;
+    //   else park.is_available = false;
+    //   send_park_is_available("index_pub_event_comment_interval");
+    // })
+    
+    res.write("data: keep connect comment\n\n");
+    setTimeout(function () {
+      if (Date.now()-last_index_loc_comment_cb_time<5000) park.is_available = true;
       else park.is_available = false;
       send_park_is_available("index_pub_event_comment_interval");
-    })
+    },3000);
     // res.write("data: keep connect comment\n\n",function(e){
     //   console.log("comment to /index_pub/event",e);
     //   if(e&&(loss_count++)>3){//not success and count and check count>3
