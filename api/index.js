@@ -513,7 +513,8 @@ app.get("/index_pub/event", (req, res) => {
     //   send_park_is_available("index_pub_event_comment_interval");
     // })
     
-    res.write("data: keep connect comment\n\n");
+    res.write("data: keep connect comment\n\n",function(e){
+    console.log("index_pub_event.data: keep connect comment",e)});
     setTimeout(function () {
       console.log("Date.now()-last_index_loc_comment_cb_time<5000",`${Date.now()}-${park.last_index_loc_comment_cb_time}<${5000}`);
       if (Date.now()-park.last_index_loc_comment_cb_time<5000) park.is_available = true;
