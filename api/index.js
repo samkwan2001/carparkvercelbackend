@@ -1220,6 +1220,11 @@ async function call_charger_move_to(spot, _id = void 0) {//added ,_id = void 0
           clearIntervals(charger_moving_intervals);
           resolve();                                                  // 在完成後解析 Promise
         }else{
+          console.log(`
+            park.charger_is_moving_to_spot==spot
+            ${park.charger_is_moving_to_spot}==${spot}
+            ${typeof park.charger_is_moving_to_spot}==${typeof spot}
+            `);
           index_loc_msg_vaild_time = Date.now();
           send_to_index_loc("call_charger_move_to", spot);
         }
