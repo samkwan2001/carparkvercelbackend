@@ -453,7 +453,8 @@ let last_event_data = {}
 let index_loc_res = void 0;
 // 创建包含状态的对象
 const state = {
-  is_available: false
+  is_available: false,
+  _is_available_fales_times:0
 };
 
 // 创建代理监控属性变化
@@ -469,13 +470,22 @@ const park = new Proxy(state, {
   },
   set(target, prop, value) {
     if (prop === 'is_available') {
-      console.log(`is_available 被赋值为: ${value}`);
+      console.log(`is_available 被赋值为: ${value} `,!value?`${target._is_available_fales_times}次`:"");
+      if(value){target._is_available_fales_times=0;target.is_available=true;}
+      else{
+        if(target._is_available_fales_times<3){
+          target._is_available_fales_times++;
+        }else{
+          target._is_available_fales_times=0;
+          target.is_available=false;
+        }
+      }
       // 可以在这里添加额外逻辑，如验证、日志等
     }else if (prop === 'last_index_loc_comment_cb_time') {
       console.log(`last_index_loc_comment_cb_time 被赋值为: ${value}`);
       // 可以在这里添加额外逻辑，如验证、日志等
     }
-    target[prop] = value; // 执行实际赋值
+    if (prop !== 'is_available')target[prop] = value; // 执行实际赋值
     return true; // 表示赋值成功
   }
 
