@@ -457,13 +457,13 @@ const state = {
   is_available: false,
   _is_available_fales_times: 0
 };
-
+let get_available_times=0;
 // 创建代理监控属性变化
 const park = new Proxy(state, {
 
   get(target, prop) {
     if (prop === 'is_available') {
-      console.log(`获取 is_available 的值: ${target[prop]}`);
+      console.log(`获取 is_available 的值: ${target[prop]}`,`${get_available_times++}次`);
     } else if (prop === 'last_index_loc_comment_cb_time') {
       console.log(`获取 last_index_loc_comment_cb_time 的值: ${target[prop]}`);
     }
@@ -471,7 +471,7 @@ const park = new Proxy(state, {
   },
   set(target, prop, value) {
     if (prop === 'is_available') {
-      console.log(`is_available 被赋值为: ${value} `, !value ? `${target._is_available_fales_times}次` : "");
+      console.log(`is_available 被赋值为: ${value} `, !value ? `${target._is_available_fales_times}次` : "",`被获取${get_available_times}次`);
       if (value) { target._is_available_fales_times = 0; target.is_available = true; }
       else {
         if (target._is_available_fales_times < 3) {
@@ -485,8 +485,9 @@ const park = new Proxy(state, {
     } else if (prop === 'last_index_loc_comment_cb_time') {
       console.log(`last_index_loc_comment_cb_time 被赋值为: ${value}`);
       // 可以在这里添加额外逻辑，如验证、日志等
-    }
-    if (prop !== 'is_available') target[prop] = value; // 执行实际赋值
+      target[prop] = value;
+    }else target[prop] = value;
+    // if (prop !== 'is_available') target[prop] = value; // 执行实际赋值
     return true; // 表示赋值成功
   }
 
