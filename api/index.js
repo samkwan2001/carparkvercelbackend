@@ -491,7 +491,7 @@ const park = new Proxy(state, {
   }
 
 });
-app.get("/is_pack_available", function (req, res) { res.send(park.is_available); send_park_is_available(`app.get("/is_pack_available"`) });
+app.get("/is_pack_available", function (req, res) { for(let i=0;i<10;i++){const _ = park.is_available;};res.send(park.is_available); send_park_is_available(`app.get("/is_pack_available"`) });
 function send_park_is_available(...args) {
   const m = park.is_available ? "park_is_available" : "pack_not_available"
   send_to_client("message", m);
