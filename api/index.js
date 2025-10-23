@@ -61,7 +61,7 @@ function clearIntervals(Intervals = []) {
     }
   }
 };
-let log_count=0;
+let log_count = 0;
 let console_log_res = void 0;
 const log = console.log;
 console.log = (...data) => {
@@ -91,7 +91,7 @@ console.log = (...data) => {
   data = data.map(function (item) { try { return JSON.stringify(item); } catch (e) { return `*${item}*`; } })
   if (console_log_res !== void 0 && !console_log_res.destroyed) {
     console_log_res.write("event: message\n");
-    console_log_res.write("data:"+ callerName + (data.join("|/|")).replace("\n\n", " \n ") + "\n\n");
+    console_log_res.write("data:" + callerName + (data.join("|/|")).replace("\n\n", " \n ") + "\n\n");
   }
   log(callerName, ...data);
 };
@@ -455,7 +455,7 @@ let index_loc_res = void 0;
 // 创建包含状态的对象
 const state = {
   is_available: false,
-  _is_available_fales_times:0
+  _is_available_fales_times: 0
 };
 
 // 创建代理监控属性变化
@@ -464,29 +464,29 @@ const park = new Proxy(state, {
   get(target, prop) {
     if (prop === 'is_available') {
       console.log(`获取 is_available 的值: ${target[prop]}`);
-    }else if (prop === 'last_index_loc_comment_cb_time') {
+    } else if (prop === 'last_index_loc_comment_cb_time') {
       console.log(`获取 last_index_loc_comment_cb_time 的值: ${target[prop]}`);
     }
     return target[prop];
   },
   set(target, prop, value) {
     if (prop === 'is_available') {
-      console.log(`is_available 被赋值为: ${value} `,!value?`${target._is_available_fales_times}次`:"");
-      if(value){target._is_available_fales_times=0;target.is_available=true;}
-      else{
-        if(target._is_available_fales_times<3){
+      console.log(`is_available 被赋值为: ${value} `, !value ? `${target._is_available_fales_times}次` : "");
+      if (value) { target._is_available_fales_times = 0; target.is_available = true; }
+      else {
+        if (target._is_available_fales_times < 3) {
           target._is_available_fales_times++;
-        }else{
-          target._is_available_fales_times=0;
-          target.is_available=false;
+        } else {
+          target._is_available_fales_times = 0;
+          target.is_available = false;
         }
       }
       // 可以在这里添加额外逻辑，如验证、日志等
-    }else if (prop === 'last_index_loc_comment_cb_time') {
+    } else if (prop === 'last_index_loc_comment_cb_time') {
       console.log(`last_index_loc_comment_cb_time 被赋值为: ${value}`);
       // 可以在这里添加额外逻辑，如验证、日志等
     }
-    if (prop !== 'is_available')target[prop] = value; // 执行实际赋值
+    if (prop !== 'is_available') target[prop] = value; // 执行实际赋值
     return true; // 表示赋值成功
   }
 
@@ -501,8 +501,8 @@ let _5min_test = void 0;
 let index_pub_event_close_Timeout = setTimeout(() => { });
 let index_pub_event_comment_interval = setInterval(() => { })
 let index_pub_reconnect_Timeout = setTimeout(() => { });
-park.last_index_loc_comment_cb_time=0;
-app.get("/index_loc/comment_cb", function (req,res){park.last_index_loc_comment_cb_time=Date.now();res.send("ok");})
+park.last_index_loc_comment_cb_time = 0;
+app.get("/index_loc/comment_cb", function (req, res) { park.last_index_loc_comment_cb_time = Date.now(); res.send("ok"); })
 app.get("/index_pub/event", (req, res) => {
   console.log("req.url", req.url);
   clearTimeout(index_pub_event_close_Timeout);
@@ -523,15 +523,16 @@ app.get("/index_pub/event", (req, res) => {
     //   else park.is_available = false;
     //   send_park_is_available("index_pub_event_comment_interval");
     // })
-    
-    res.write("data: keep connect comment\n\n",function(e){
-    console.log("index_pub_event.data: keep connect comment",e)});
+
+    res.write("data: keep connect comment\n\n", function (e) {
+      console.log("index_pub_event.data: keep connect comment", e)
+    });
     setTimeout(function () {
-      console.log("Date.now()-last_index_loc_comment_cb_time<5000",`${Date.now()}-${park.last_index_loc_comment_cb_time}<${5000}`);
-      if (Date.now()-park.last_index_loc_comment_cb_time<5000) park.is_available = true;
+      console.log("Date.now()-last_index_loc_comment_cb_time<5000", `${Date.now()}-${park.last_index_loc_comment_cb_time}<${5000}`);
+      if (Date.now() - park.last_index_loc_comment_cb_time < 5000) park.is_available = true;
       else park.is_available = false;
       send_park_is_available("index_pub_event_comment_interval");
-    },3000);
+    }, 3000);
     // res.write("data: keep connect comment\n\n",function(e){
     //   console.log("comment to /index_pub/event",e);
     //   if(e&&(loss_count++)>3){//not success and count and check count>3
@@ -592,9 +593,9 @@ function send_to_index_loc(event, data) {
   // }
   console.log(`send_to_index_loc(${event},${data})`)
 };
-let index_loc_msg_rev_time = 0;
-let need_wait = 0;
-let charger_is_moving_to_spot = 0;
+park.index_loc_msg_rev_time = 0;
+park.need_wait = 0;
+park.charger_is_moving_to_spot = 0;
 app.get("/index_loc/push", (req, res) => {
   const log = true;
   console.log('get"/index_loc/push"')
@@ -606,14 +607,14 @@ app.get("/index_loc/push", (req, res) => {
   var params = new URLSearchParams(req.url.split("?")[1]);
   if (log) console.log("params", params);
   if (params.get("spot") !== void 0) {
-    charger_is_moving_to_spot = parseInt(params.get("spot"));
+    park.charger_is_moving_to_spot = parseInt(params.get("spot"));
   }
   if (params.get("need_wait") !== void 0) {
-    need_wait = parseInt(params.get("need_wait"));
-    index_loc_msg_rev_time = Date.now();
+    park.need_wait = parseInt(params.get("need_wait"));
+    park.index_loc_msg_rev_time = Date.now();
   }
-  console.log("need_wait", need_wait);
-  console.log("index_loc/push", "index_loc_msg_rev_time", index_loc_msg_rev_time);
+  console.log("need_wait", park.need_wait);
+  console.log("index_loc/push", "index_loc_msg_rev_time", park.index_loc_msg_rev_time);
   res.send("OK");
 })
 app.get("/admin_debug.html", (req, res) => {
@@ -1201,7 +1202,7 @@ async function call_charger_move_to(spot, _id = void 0) {//added ,_id = void 0
 
   // const result = await fetch(`http://${charger_IPV4}/control/${command}`);
   // console.log("result",result);
-  const index_loc_msg_vaild_time = Date.now();
+  let index_loc_msg_vaild_time = Date.now();
   send_to_index_loc("call_charger_move_to", spot);
   clearIntervals(charger_moving_intervals);
   // clearTimeout(charger_moving_interval);
@@ -1212,29 +1213,34 @@ async function call_charger_move_to(spot, _id = void 0) {//added ,_id = void 0
   let start = Date.now();
   await new Promise((resolve) => {
     charger_moving_intervals.push(setInterval(async () => {
-      const completed = index_loc_msg_vaild_time < index_loc_msg_rev_time;
+      const completed = index_loc_msg_vaild_time < park.index_loc_msg_rev_time;
       if (completed) {
-        send_park_is_available("call_charger_move_to");
-        clearIntervals(charger_moving_intervals);
-        resolve(); // 在完成後解析 Promise
+        if(park.charger_is_moving_to_spot==spot){
+          send_park_is_available("call_charger_move_to");
+          clearIntervals(charger_moving_intervals);
+          resolve();                                                  // 在完成後解析 Promise
+        }else{
+          index_loc_msg_vaild_time = Date.now();
+          send_to_index_loc("call_charger_move_to", spot);
+        }
       } else if (Date.now() - start > 17000) {
         start = Date.now();
         send_to_index_loc("call_charger_move_to", spot);
       } else {
-        console.log({ "completed": { "index_loc_msg_rev_time": index_loc_msg_rev_time } })
+        console.log({ "completed": { "index_loc_msg_rev_time": park.index_loc_msg_rev_time } })
       };
     }, 2000));
   });
-  console.log("need_wait", need_wait);
-  console.log("millis_to_time_String(need_wait)", millis_to_time_String(need_wait));
-  predicted_moved_time = Date.now() + (isNaN(need_wait) ? 0 : need_wait);
+  console.log("need_wait", park.need_wait);
+  console.log("millis_to_time_String(need_wait)", millis_to_time_String(park.need_wait));
+  predicted_moved_time = Date.now() + (isNaN(park.need_wait) ? 0 : park.need_wait);
   console.log("Date.now()", Date.now());
   console.log("millis_to_time_String(Date.now())", millis_to_time_String(Date.now()));
   console.log("predicted_moved_time", predicted_moved_time);
   console.log("millis_to_time_String(predicted_moved_time)", millis_to_time_String(predicted_moved_time));
   // last_queue_shift=Date.now();
   if (_id !== void 0) send_to_client("message", "fetchData", _id)//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  if (need_wait == 0) return Already;
+  if (park.need_wait == 0) return Already;
   console.log("sleeping");
   // await sleep(need_wait);
   console.log("sleeped-----------------------------------------------------------------------------------------------------------------------");
