@@ -607,7 +607,10 @@ app.get("/index_loc/push", (req, res) => {
   var params = new URLSearchParams(req.url.split("?")[1]);
   if (log) console.log("params", params);
   if (params.get("spot") !== void 0) {
-    console.log('park.charger_is_moving_to_spot = parseInt(params.get("spot"));',params.get("spot"))
+    console.log('req.url',req.url);
+    console.log('req.url.split("?")[1]',req.url.split("?")[1]);
+    console.log('params',params);
+    console.log('park.charger_is_moving_to_spot = parseInt(params.get("spot"));',params.get("spot"));
     park.charger_is_moving_to_spot = parseInt(params.get("spot"));
   }
   if (params.get("need_wait") !== void 0) {
