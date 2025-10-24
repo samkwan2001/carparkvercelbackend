@@ -457,13 +457,13 @@ const state = {
   is_available: false,
   _is_available_fales_times: 0
 };
-let get_available_times=0;
+let get_available_times = 0;
 // 创建代理监控属性变化
 const park = new Proxy(state, {
 
   get(target, prop) {
     if (prop === 'is_available') {
-      console.log(`获取 is_available 的值: ${target[prop]}`,`${get_available_times++}次`);
+      console.log(`获取 is_available 的值: ${target[prop]}`, `${get_available_times++}次`);
     } else if (prop === 'last_index_loc_comment_cb_time') {
       console.log(`获取 last_index_loc_comment_cb_time 的值: ${target[prop]}`);
     }
@@ -471,7 +471,7 @@ const park = new Proxy(state, {
   },
   set(target, prop, value) {
     if (prop === 'is_available') {
-      console.log(`is_available 被赋值为: ${value} `, !value ? `${target._is_available_fales_times}次` : "",`被获取${get_available_times}次`);
+      console.log(`is_available 被赋值为: ${value} `, !value ? `${target._is_available_fales_times}次` : "", `被获取${get_available_times}次`);
       if (value) { target._is_available_fales_times = 0; target.is_available = true; }
       else {
         if (target._is_available_fales_times < 3) {
@@ -486,13 +486,19 @@ const park = new Proxy(state, {
       console.log(`last_index_loc_comment_cb_time 被赋值为: ${value}`);
       // 可以在这里添加额外逻辑，如验证、日志等
       target[prop] = value;
-    }else target[prop] = value;
+    } else target[prop] = value;
     // if (prop !== 'is_available') target[prop] = value; // 执行实际赋值
     return true; // 表示赋值成功
   }
 
 });
-app.get("/is_pack_available", function (req, res) { for(let i=0;i<10;i++){const _ = park.is_available;};res.send({"answer":park.is_available,"time":Date.now()}); send_park_is_available(`app.get("/is_pack_available"`) });
+app.get("/is_pack_available", function (req, res) {
+  for (let i = 0; i < 10; i++) {
+    const _ = park.is_available;
+  }
+  res.send({ "answer": park.is_available, "time": Date.now() });
+  send_park_is_available(`app.get("/is_pack_available"`);
+});
 function send_park_is_available(...args) {
   const m = park.is_available ? "park_is_available" : "pack_not_available"
   send_to_client("message", m);
@@ -563,7 +569,7 @@ app.get("/index_pub/event", (req, res) => {
     clearTimeout(index_pub_event_close_Timeout);
     index_pub_event_close_Timeout = setTimeout(function () {
       console.log("/index_pub/event close timeout");
-      park.is_available = false;
+      if(res===index_loc_res){park.is_available = false;console.log("res===index_loc_res")}
       send_park_is_available("index_pub_event_close_Timeout");
     }, 3000);
     console.log("/index_pub/event close");
@@ -608,10 +614,10 @@ app.get("/index_loc/push", (req, res) => {
   var params = new URLSearchParams(req.url.split("?")[1]);
   if (log) console.log("params", params);
   if (params.get("spot") !== void 0) {
-    console.log('req.url',req.url);
-    console.log('req.url.split("?")[1]',req.url.split("?")[1]);
-    console.log('params',params);
-    console.log('park.charger_is_moving_to_spot = parseInt(params.get("spot"));',params.get("spot"));
+    console.log('req.url', req.url);
+    console.log('req.url.split("?")[1]', req.url.split("?")[1]);
+    console.log('params', params);
+    console.log('park.charger_is_moving_to_spot = parseInt(params.get("spot"));', params.get("spot"));
     park.charger_is_moving_to_spot = parseInt(params.get("spot"));
   }
   if (params.get("need_wait") !== void 0) {
@@ -1220,11 +1226,11 @@ async function call_charger_move_to(spot, _id = void 0) {//added ,_id = void 0
     charger_moving_intervals.push(setInterval(async () => {
       const completed = index_loc_msg_vaild_time < park.index_loc_msg_rev_time;
       if (completed) {
-        if(park.charger_is_moving_to_spot==spot){
+        if (park.charger_is_moving_to_spot == spot) {
           send_park_is_available("call_charger_move_to");
           clearIntervals(charger_moving_intervals);
           resolve();                                                  // 在完成後解析 Promise
-        }else{
+        } else {
           console.log(`
             park.charger_is_moving_to_spot==spot
             ${park.charger_is_moving_to_spot}==${spot}
