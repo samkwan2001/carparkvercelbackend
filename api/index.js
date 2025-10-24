@@ -451,11 +451,12 @@ app.get("/admin_debug_fetch", async (req, res) => {
 });
 // const msg_msgNtime=[]
 let last_event_data = {}
-let index_loc_res = void 0;
+// let park.index_loc_res = void 0;
 // 创建包含状态的对象
 const state = {
   is_available: false,
-  _is_available_fales_times: 0
+  _is_available_fales_times: 0,
+  index_loc_res: void 0
 };
 let get_available_times = 0;
 // 创建代理监控属性变化
@@ -493,9 +494,9 @@ const park = new Proxy(state, {
 
 });
 app.get("/is_pack_available", function (req, res) {
-  for (let i = 0; i < 10; i++) {
-    const _ = park.is_available;
-  }
+  // for (let i = 0; i < 10; i++) {
+  //   const _ = park.is_available;
+  // }
   res.send({ "answer": park.is_available, "time": Date.now() });
   send_park_is_available(`app.get("/is_pack_available"`);
 });
@@ -520,7 +521,7 @@ app.get("/index_pub/event", (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
-  index_loc_res = res;
+  park.index_loc_res = res;
   let loss_count = 0;
   let last_comment_time = 0;
   index_pub_event_comment_interval = setInterval(function () {
@@ -531,12 +532,12 @@ app.get("/index_pub/event", (req, res) => {
     //   send_park_is_available("index_pub_event_comment_interval");
     // })
 
-    res.write("data: keep connect comment\n\n", function (e) {
+    res.write(`data: keep connect comment, your id is ${res.req.client[find_symbol(res.req.client, "async_id_symbol")]}\n\n`, function (e) {
       console.log("index_pub_event.data: keep connect comment", e)
     });
     setTimeout(function () {
-      console.log("Date.now()-last_index_loc_comment_cb_time<5000", `${Date.now()}-${park.last_index_loc_comment_cb_time}<${5000}`);
-      if (Date.now() - park.last_index_loc_comment_cb_time < 5000) park.is_available = true;
+      console.log("Date.now()-last_index_loc_comment_cb_time<10000", `${Date.now()}-${park.last_index_loc_comment_cb_time}<${5000}`);
+      if (Date.now() - park.last_index_loc_comment_cb_time < 10000) park.is_available = true;
       else park.is_available = false;
       send_park_is_available("index_pub_event_comment_interval");
     }, 3000);
@@ -564,12 +565,21 @@ app.get("/index_pub/event", (req, res) => {
     res.write("event: reconnect\n");
     res.write("data:" + String(0) + "\n\n", (e) => { console.log("e", e); res.end() });
   }, 3 * 60 * 1000);
+  const this_async_id = res.req.client[find_symbol(res.req.client, "async_id_symbol")]
   req.on("close", () => {
     clearInterval(index_pub_event_comment_interval);
     clearTimeout(index_pub_event_close_Timeout);
     index_pub_event_close_Timeout = setTimeout(function () {
       console.log("/index_pub/event close timeout");
-      if(res===index_loc_res){park.is_available = false;console.log("res===index_loc_res")}
+      if (res === park.index_loc_res) {
+        park.is_available = false;
+        console.log("res===index_loc_res");
+        console.log(`
+          this_async_id:${this_async_id},
+          res.req.client[find_symbol(res.req.client, "async_id_symbol")]:${res.req.client[find_symbol(res.req.client, "async_id_symbol")]},
+          park.index_loc_res.req.client[find_symbol(res.req.client, "async_id_symbol")]:${park.index_loc_res.req.client[find_symbol(res.req.client, "async_id_symbol")]},
+      `)
+      }
       send_park_is_available("index_pub_event_close_Timeout");
     }, 3000);
     console.log("/index_pub/event close");
@@ -589,9 +599,9 @@ app.get("/index_pub/event", (req, res) => {
   send_to_index_loc(last_event_data["event"], last_event_data["data"])
 })
 function send_to_index_loc(event, data) {
-  if (index_loc_res !== void 0 && !index_loc_res.destroyed) {
-    index_loc_res.write("event: " + event + "\n", send_park_is_available);
-    index_loc_res.write("data:" + data + "\n\n", send_park_is_available);
+  if (park.index_loc_res !== void 0 && !park.index_loc_res.destroyed) {
+    park.index_loc_res.write("event: " + event + "\n", send_park_is_available);
+    park.index_loc_res.write("data:" + data + "\n\n", send_park_is_available);
   }
   // else {
   // setTimeout(send_to_index_loc,10,(event,data));
