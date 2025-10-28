@@ -43,8 +43,8 @@ const Finish = 3;
 const not_this_user = 4;
 const Already = 1;
 
-let timer = setInterval(async () => {
-  clearInterval(timer);
+let timer = setTimeout(async () => {
+  clearTimeout(timer);
 }, 0);
 function clearIntervals(Intervals = []) {
   // console.log("Intervals:",Intervals.length);
@@ -1132,24 +1132,24 @@ app.post("/cancal", async (req, resp) => {
 async function queue_shift(exception = void 0) {
   console.log("queue_shiftqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq");
   const log = true;
-  clearInterval(timer)
-  var queue_Interval = null
-  const limit = 1
+  clearTimeout(timer);
+  var queue_Interval = null;
+  const limit = 1;
   var sort = { "start time": -1 }  //sort by _id; -1==>倒序
   const charging_cursor = collection.find(
     {
       "start time": { "$exists": true }
       , "charge duration": { $gt: 0 }
     }, { sort, limit }
-  )
-  const charging_rows = await charging_cursor.toArray()
+  );
+  const charging_rows = await charging_cursor.toArray();
   if (log) console.log("charging_rows", charging_rows);
-  const charging_user = charging_rows[0]  //get charging user
+  const charging_user = charging_rows[0];  //get charging user
   var user_who_need_to_charge = { "Parking Space Num": 0, "charge duration": null }
-  let remaining_time = -1   //配合196 logic
-  let there_are_queuing = false
+  let remaining_time = -1;   //配合196 logic
+  let there_are_queuing = false;
   if (!(charging_user === undefined)) {
-    remaining_time = charging_user["start time"].getTime() + charging_user["charge duration"] * 1000 * 60 - (Date.now())
+    remaining_time = charging_user["start time"].getTime() + charging_user["charge duration"] * 1000 * 60 - (Date.now());
     // if(log)console.log("remaining_time",remaining_time);
     // if(log)console.log(charging_user["start time"].getTime())
     // if(log)console.log(charging_user["charge duration"])
@@ -1157,8 +1157,8 @@ async function queue_shift(exception = void 0) {
     // if(log)console.log("user_who_need_to_charge",user_who_need_to_charge);
   }
   if (remaining_time >= 0) {
-    queue_Interval = remaining_time
-    user_who_need_to_charge = charging_user
+    queue_Interval = remaining_time;
+    user_who_need_to_charge = charging_user;
   }
   else {
     const queue_cursor = collection.find(  //collection.find 可以當係select咁解
@@ -1210,7 +1210,7 @@ async function queue_shift(exception = void 0) {
     }
     // reload_all_client(_id=String(user_who_need_to_charge["_id"]))
     send_to_client("message", "fetchData", String(user_who_need_to_charge["_id"]))
-    timer = setInterval(queue_shift, queue_Interval)
+    timer = setTimeout(queue_shift, queue_Interval)
     if (log) console.log("next queue_shift" + queue_Interval)
   }
 }
