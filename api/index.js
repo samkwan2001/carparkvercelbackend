@@ -538,7 +538,7 @@ app.get("/index_pub/event", (req, res) => {
     setTimeout(function () {
       console.log("Date.now()-last_index_loc_comment_cb_time<10000", `${Date.now()}-${park.last_index_loc_comment_cb_time}<${10000}`);
       if (Date.now() - park.last_index_loc_comment_cb_time < 10000) park.is_available = true;
-      else park.is_available = false;
+      else {park.is_available = false;console.log("park.is_available = false;//didn't receive any callback");}
       send_park_is_available("index_pub_event_comment_interval");
     }, 3000);
     // res.write("data: keep connect comment\n\n",function(e){
@@ -572,7 +572,7 @@ app.get("/index_pub/event", (req, res) => {
     index_pub_event_close_Timeout = setTimeout(function () {
       console.log("/index_pub/event close timeout");
       if (res === park.index_loc_res) {
-        park.is_available = false;
+        // park.is_available = false;
         console.log("res===index_loc_res");
         console.log(`
           this_async_id:${this_async_id},
