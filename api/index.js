@@ -86,7 +86,7 @@ console.log = (...data) => {
     }
   }
   callerName = callerlist.reverse().join(" -> ");
-  callerName = `${log_count++}<${callerName}>`;
+  callerName = `${log_count++}<${callerName}>${Date.now()}`;
 
   data = data.map(function (item) { try { return JSON.stringify(item); } catch (e) { return `*${item}*`; } })
   if (console_log_res !== void 0 && !console_log_res.destroyed) {
