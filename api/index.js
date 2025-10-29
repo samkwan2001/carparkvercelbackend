@@ -302,6 +302,7 @@ app.get('/events', (req, res) => {
   // res.write("data:" + "reload" + "\n\n");
   if (Date.now() - last_queue_shift < 1000) {
     // reload_all_client()
+    console.log("last_queue_shift in 1sec ago call this client to fetchData")
     res.write("event: message\n");
     res.write("data:fetchData\n\n");
   }
@@ -1036,7 +1037,10 @@ app.post("/selected", async (req, resp) => {
     resp.send(result);
     if (timer._destroyed) {
       queue_shift();
-    } else send_to_client("message", "fetchData")
+    } else {
+      console.log("this client is selected and confirmed, call this client to fetchData")
+      send_to_client("message", "fetchData");
+    }
   }
   catch (err) {
     if (log) console.log("err:" + err);
@@ -1155,6 +1159,7 @@ async function queue_shift(exception = void 0) {
   let retry_reload_interval = setInterval(() => { }, 10)
   clearInterval(retry_reload_interval);
   let retry_reload = () => {
+    console.log("queue_shift before call_charger_moove_to, call all client fetchData")
     reloaded_client = send_to_client("message", "fetchData");
     if (Date.now() - last_queue_shift > 1)
       clearInterval(retry_reload_interval);
@@ -1181,6 +1186,7 @@ async function queue_shift(exception = void 0) {
       console.log("user_who_need_to_charge", user_who_need_to_charge)
     }
     // reload_all_client(_id=String(user_who_need_to_charge["_id"]))
+    console.log("call user_who_need_to_charge fetchData")
     send_to_client("message", "fetchData", String(user_who_need_to_charge["_id"]))
     timer = setTimeout(queue_shift, queue_Interval)
     if (log) console.log("next queue_shift" + queue_Interval)
