@@ -1036,6 +1036,8 @@ app.post("/selected", async (req, resp) => {
     if (log) console.log("result:", result);
     resp.send(result);
     if (timer._destroyed) {
+      console.log("this client is selected and confirmed, call this client to fetchData")
+      send_to_client("message", "fetchData");
       queue_shift();
     } else {
       console.log("this client is selected and confirmed, call this client to fetchData")
