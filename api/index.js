@@ -372,43 +372,6 @@ app.get('/admin_debug_events', (req, res) => {
 });
 app.get("/admin_debug_fetch", async (req, res) => {
   console.log("get /admin_debug_fetch :" + req.url);
-  // const rows = await collection.find({}).toArray();
-  // const results = []
-  // rows.forEach((row) => {
-  //   let client = clients.filter((client) => client._id == String(row._id));
-  //   const result = {};
-  //   let key;
-  //   for (key in row) {
-  //     if (row.hasOwnProperty(key)) {
-  //       result[key] = row[key];
-  //     }
-  //   }
-  //   Object.keys(client).forEach(
-  //     (key, index) => {
-  //       console.log(key, index,);
-  //       client = client[key]
-  //     }
-  //   )
-  //   for (key in client) {
-  //     if (key != "res" && client.hasOwnProperty(key)) {
-  //       result[key] = client[key];
-  //     }
-  //   }
-  //   results.push(result);
-  // });
-  // // user have no id
-  // clients.forEach((client) => {
-  //   if (!client.hasOwnProperty("_id") || client["_id"] !== "undefined") { return; }
-  //   const result = {};
-  //   let key;
-  //   for (key in client) {
-  //     if (key != "res" && client.hasOwnProperty(key)) {
-  //       result[key] = client[key];
-  //     }
-  //   }
-  //   results.push(result);
-  // })
-
   const rows = await collection.find({}).toArray();
   const results = [];
 
@@ -452,11 +415,24 @@ app.get("/admin_debug_fetch", async (req, res) => {
 // const msg_msgNtime=[]
 let last_event_data = {}
 // let park.index_loc_res = void 0;
+const target_res_connection = {};
+const proxied_res_connection = new Proxy(target_res_connection, {
+  get(target, prop) {
+    return target[prop];
+  },
+  set(target, prop, value) {
+    console.log(`${prop} 被赋值为: ${value}`);
+    target[prop] = value;
+    console.log(target);
+    return true;
+  }
+});
 // 创建包含状态的对象
 const state = {
   is_available: false,
   _is_available_fales_times: 0,
-  index_loc_res: void 0
+  index_loc_res: void 0,
+  res_connection: proxied_res_connection
 };
 let get_available_times = 0;
 // 创建代理监控属性变化
@@ -464,29 +440,41 @@ const park = new Proxy(state, {
 
   get(target, prop) {
     if (prop === 'is_available') {
-      console.log(`获取 is_available 的值: ${target[prop]}`, `${get_available_times++}次`);
+      const 輔助 = Object.values(target.res_connection).some(value => value === true);
+      console.log(`获取 is_available 的值: 實際${target[prop]} 輔助${輔助}`, `${get_available_times++}次 `);
+      if (!輔助) console.log(target.res_connection);
+      return target[prop] || 輔助;
     } else if (prop === 'last_index_loc_comment_cb_time') {
-      console.log(`获取 last_index_loc_comment_cb_time 的值: ${target[prop]}`);
+      console.log(`获取 last_index_loc_comment_cb_time 的值:`, target[prop]);
+    } else if (prop === 'index_loc_res') {
+      console.log(`获取 index_loc_res 的值, async_id: ${target[prop]?.req?.client[find_symbol(target[prop].req.client, "async_id_symbol")]}`);
     }
     return target[prop];
   },
   set(target, prop, value) {
     if (prop === 'is_available') {
-      console.log(`is_available 被赋值为: ${value} `, !value ? `${target._is_available_fales_times}次` : "", `被获取${get_available_times}次`);
-      if (value) { target._is_available_fales_times = 0; target.is_available = true; }
-      else {
-        if (target._is_available_fales_times < 3) {
-          target._is_available_fales_times++;
-        } else {
-          target._is_available_fales_times = 0;
-          target.is_available = false;
-        }
-      }
+      // console.log(`is_available 被赋值为: ${value} `, !value ? `${target._is_available_fales_times}次` : "", `被获取${get_available_times}次`);
+      // if (value) { target._is_available_fales_times = 0; target.is_available = true; }
+      // else {
+      //   if (target._is_available_fales_times < 3) {
+      //     target._is_available_fales_times++;
+      //   } else {
+      //     target._is_available_fales_times = 0;
+      //     target.is_available = false;
+      //   }
+      // }
+      console.log(`is_available 被赋值为: ${value} `, `被获取${get_available_times}次`);
+      target[prop] = value;
       // 可以在这里添加额外逻辑，如验证、日志等
-    } else if (prop === 'last_index_loc_comment_cb_time') {
-      console.log(`last_index_loc_comment_cb_time 被赋值为: ${value}`);
+      // } else if (prop === 'last_index_loc_comment_cb_time') {
+      //   console.log(`last_index_loc_comment_cb_time 被赋值为: ${value}`);
       // 可以在这里添加额外逻辑，如验证、日志等
       target[prop] = value;
+    } else if (prop === 'index_loc_res') {
+      target[prop] = value;
+      const async_id = target[prop].req.client[find_symbol(target[prop].req.client, "async_id_symbol")]
+      target.res_connection[async_id] = true;//
+      console.log(`index_loc_res 被赋值为...async_id: ${async_id}`);
     } else target[prop] = value;
     // if (prop !== 'is_available') target[prop] = value; // 执行实际赋值
     return true; // 表示赋值成功
@@ -509,71 +497,65 @@ let _5min_test = void 0;
 let index_pub_event_close_Timeout = setTimeout(() => { });
 let index_pub_event_comment_interval = setInterval(() => { })
 let index_pub_reconnect_Timeout = setTimeout(() => { });
-park.last_index_loc_comment_cb_time = 0;
-app.get("/index_loc/comment_cb", function (req, res) { park.last_index_loc_comment_cb_time = Date.now(); res.send("ok");park.is_available = true; })
+park.last_index_loc_comment_cb_time = {};
+app.get("/index_loc/comment_cb", function (req, res) {
+  let urlparams = new URLSearchParams(req.url.split("?")[1]);
+  const async_id = urlparams.get("async_id");
+  park.last_index_loc_comment_cb_time[async_id] = Date.now();
+  park.res_connection[async_id] = true;
+  res.send(`ok${async_id}`);
+  park.is_available = true;
+})
 app.get("/index_pub/event", (req, res) => {
   console.log("req.url", req.url);
   clearTimeout(index_pub_event_close_Timeout);
   clearTimeout(index_pub_reconnect_Timeout);
   clearInterval(index_pub_event_comment_interval);
+  park.index_loc_res = res;
+  const this_async_id = res.req.client[find_symbol(res.req.client, "async_id_symbol")];
   park.is_available = true;
+  park.res_connection[this_async_id] = true;
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
-  park.index_loc_res = res;
-  let loss_count = 0;
-  let last_comment_time = 0;
-  index_pub_event_comment_interval = setInterval(function () {
+  index_pub_event_comment_interval = setInterval(function (this_async_id) {
+    const start = Date.now();
     res.write("event: comment\n");
-    // res.write("data: keep connect comment\n\n", function (e) {
-    //   if (!e) park.is_available = true;
-    //   else park.is_available = false;
-    //   send_park_is_available("index_pub_event_comment_interval");
-    // })
 
-    res.write(`data: keep connect comment, your id is ${res.req.client[find_symbol(res.req.client, "async_id_symbol")]}\n\n`, function (e) {
+    res.write(`data: keep connect comment, your id is ${this_async_id}\n\n`, function (e) {
       console.log("index_pub_event.data: keep connect comment", e)
     });
-    setTimeout(function () {
-      console.log("Date.now()-last_index_loc_comment_cb_time<10000", `${Date.now()}-${park.last_index_loc_comment_cb_time}<${10000}`);
-      if (Date.now() - park.last_index_loc_comment_cb_time < 10000) park.is_available = true;
-      else {park.is_available = false;console.log("park.is_available = false;//didn't receive any callback");}
+    const timeout = 5000;
+    setTimeout(function (_this_async_id) {
+      console.log(`park.last_index_loc_comment_cb_time[_this_async_id] > start`, `${park.last_index_loc_comment_cb_time[_this_async_id]} > ${start}`);
+      console.log(`park.last_index_loc_comment_cb_time[_this_async_id] > start`, `${park.last_index_loc_comment_cb_time[_this_async_id]} > ${start}`);
+      if (park.last_index_loc_comment_cb_time[_this_async_id] > start) park.res_connection[_this_async_id] = true;
+      // else { park.is_available = false; console.log("park.is_available = false;//didn't receive any callback",_this_async_id); }
+      else {
+        park.res_connection[_this_async_id] = false;
+        console.log("park.res_connection[_this_async_id]=false;//didn't receive any callback", _this_async_id);
+        res.end();
+      }
       send_park_is_available("index_pub_event_comment_interval");
-    }, 10000);
-    // res.write("data: keep connect comment\n\n",function(e){
-    //   console.log("comment to /index_pub/event",e);
-    //   if(e&&(loss_count++)>3){//not success and count and check count>3
-    //     clearInterval(index_pub_event_comment_interval);
-    //     res.end();
-    //     park_is_available=false;
-    //     console.log(`loss_count=${loss_count}`,e);
-    //   }else if(e){//not success
-    //     console.log(`park_is_available=${park_is_available}, retry on 1000ms`)
-    //     setTimeout(()=>{index_pub_event_comment_interval._onTimeout();console.log("retry");},1000);
-    //   }else if(!e){//success
-    //     loss_count=0;//reset count
-    //     park_is_available=true;
-    //     console.log("/index_pub/event comment interval",Date.now()-last_comment_time);
-    //     last_comment_time=Date.now();
-    //   }
-    //   send_park_is_available();
-    // });
-  }, 15000);
-  index_pub_reconnect_Timeout = setTimeout(() => {
-    console.log("reconnect /index_pub/event")
+    }, timeout, this_async_id);
+  }, 15000, this_async_id);
+  index_pub_reconnect_Timeout = setTimeout((this_async_id) => {
+    console.log("reconnect /index_pub/event", this_async_id);
+    park.res_connection[this_async_id] = false;
     res.write("event: reconnect\n");
     res.write("data:" + String(0) + "\n\n", (e) => { console.log("e", e); res.end() });
-  }, 3 * 60 * 1000);
-  const this_async_id = res.req.client[find_symbol(res.req.client, "async_id_symbol")]
+  }, 3 * 60 * 1000, this_async_id);
   req.on("close", () => {
     clearInterval(index_pub_event_comment_interval);
     clearTimeout(index_pub_event_close_Timeout);
     index_pub_event_close_Timeout = setTimeout(function () {
-      console.log("/index_pub/event close timeout");
-      if (res === park.index_loc_res) {
-        // park.is_available = false;
-        console.log("res===index_loc_res");
+      console.log("/index_pub/event close timeout", this_async_id, park.index_loc_res.req.client[find_symbol(res.req.client, "async_id_symbol")]);
+      console.log("/index_pub/event close timeout", typeof this_async_id, typeof park.index_loc_res.req.client[find_symbol(res.req.client, "async_id_symbol")]);
+      park.res_connection[this_async_id] = false;
+      if (this_async_id == park.index_loc_res.req.client[find_symbol(res.req.client, "async_id_symbol")]) {
+        park.is_available = false;
+        console.log(`this_async_id == park.index_loc_res.req.client[find_symbol(res.req.client, "async_id_symbol")]`);
         console.log(`
           this_async_id:${this_async_id},
           res.req.client[find_symbol(res.req.client, "async_id_symbol")]:${res.req.client[find_symbol(res.req.client, "async_id_symbol")]},
@@ -584,17 +566,6 @@ app.get("/index_pub/event", (req, res) => {
     }, 3000);
     console.log("/index_pub/event close");
   });
-
-
-  // if(_5min_test)clearInterval(_5min_test);
-  // _5min_count=0;
-  // _5min_test=setInterval(function(){
-  //   every=setInterval(function(){
-  //     res.write(`event:message\ndata:_5min_count=${_5min_count++}\n\n`,console.log);
-  //   },100);
-  //   setTimeout(function(){clearInterval(every)},20*1000)
-  // },(5*60*1000)-(10*1000));
-
 
   send_to_index_loc(last_event_data["event"], last_event_data["data"])
 })
