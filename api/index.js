@@ -604,6 +604,7 @@ app.get("/index_loc/push", (req, res) => {
   if (params.get("need_wait") !== void 0) {
     park.need_wait = parseInt(params.get("need_wait"));
     park.index_loc_msg_rev_time = Date.now();
+    send_to_client("need_wait",park.need_wait);
   }
   console.log("need_wait", park.need_wait);
   console.log("index_loc/push", "index_loc_msg_rev_time", park.index_loc_msg_rev_time);
@@ -1236,7 +1237,7 @@ async function call_charger_move_to(spot, _id = void 0) {//added ,_id = void 0
   console.log("predicted_moved_time", predicted_moved_time);
   console.log("millis_to_time_String(predicted_moved_time)", millis_to_time_String(predicted_moved_time));
   // last_queue_shift=Date.now();
-  if (_id !== void 0) send_to_client("message", "fetchData", _id)//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  // if (_id !== void 0) send_to_client("message", "fetchData", _id)//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   if (park.need_wait == 0) return Already;
   console.log("sleeping");
   // await sleep(need_wait);
