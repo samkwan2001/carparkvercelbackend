@@ -10,7 +10,6 @@ const port = 7000;
 const cors = require("cors");
 var fs = require('fs');
 const { clearInterval } = require('timers');
-let predicted_moved_time = 0;
 // app.use(cors());
 const is_wall_c = process.env.is_wall_c === "1";
 app.use(cors({
@@ -43,9 +42,6 @@ const Finish = 3;
 const not_this_user = 4;
 const Already = 1;
 
-let timer = setTimeout(async () => {
-  clearTimeout(timer);
-}, 0);
 function clearIntervals(Intervals = []) {
   // console.log("Intervals:",Intervals.length);
   // for (let i = 0; i < Intervals.length; i++) {
@@ -433,7 +429,17 @@ const state = {
   is_available: false,
   _is_available_fales_times: 0,
   index_loc_res: void 0,
-  res_connection: proxied_res_connection
+  res_connection: proxied_res_connection,
+  timer: setTimeout(async () => {
+    // clearTimeout(timer);
+  }, 0),
+  now_spot: 0,
+  need_wait: 0,//time left from pev_spot to now_spot
+  pev_spot: 0,
+  index_loc_msg_rev_time: 0,
+  charger_is_moving_to_spot: 0,
+  predicted_moved_time: 0,
+  last_index_loc_comment_cb_time: {},
 };
 let get_available_times = 0;
 // 创建代理监控属性变化
@@ -482,6 +488,18 @@ const park = new Proxy(state, {
   }
 
 });
+park.state_pack_to_client = () => {
+  return {
+    is_available: park.is_available,
+    last_index_loc_comment_cb_time: park.last_index_loc_comment_cb_time,
+    predicted_moved_time: park.predicted_moved_time,
+    charger_is_moving_to_spot: park.charger_is_moving_to_spot,
+    need_wait: park.need_wait,
+    now_spot: park.now_spot,
+    timer_destroyed: park.timer._destroyed
+  }
+}
+
 app.get("/is_pack_available", function (req, res) {
   // for (let i = 0; i < 10; i++) {
   //   const _ = park.is_available;
@@ -492,13 +510,13 @@ app.get("/is_pack_available", function (req, res) {
 function send_park_is_available(...args) {
   const m = park.is_available ? "park_is_available" : "pack_not_available"
   send_to_client("message", m);
+  if (m) send_to_client("park", park.state_pack_to_client());
   console.log(`send_to_client ${m}`, args);
 }
 let _5min_test = void 0;
 let index_pub_event_close_Timeout = setTimeout(() => { });
 let index_pub_event_comment_interval = setInterval(() => { })
 let index_pub_reconnect_Timeout = setTimeout(() => { });
-park.last_index_loc_comment_cb_time = {};
 app.get("/index_loc/comment_cb", function (req, res) {
   let urlparams = new URLSearchParams(req.url.split("?")[1]);
   const async_id = urlparams.get("async_id");
@@ -605,7 +623,7 @@ app.get("/index_loc/push", (req, res) => {
   if (params.get("need_wait") !== void 0) {
     park.need_wait = parseInt(params.get("need_wait"));
     park.index_loc_msg_rev_time = Date.now();
-    send_to_client("need_wait",park.need_wait);
+    send_to_client("need_wait", park.need_wait);
   }
   console.log("need_wait", park.need_wait);
   console.log("index_loc/push", "index_loc_msg_rev_time", park.index_loc_msg_rev_time);
@@ -816,8 +834,8 @@ app.get('/', async (req, res) => {
     else if (this_user["charge duration"] !== undefined) {
       console.log(`${new Date(this_user["start time"]).getTime()} + ${(this_user["charge duration"] * 60 * 1000)}`)
       console.log(new Date(this_user["start time"]).getTime() + (this_user["charge duration"] * 60 * 1000))
-      res.send([InUse, (new Date(this_user["start time"]).getTime() + (this_user["charge duration"] * 60 * 1000)), predicted_moved_time, carNum]);
-      console.log([InUse, (new Date(this_user["start time"]).getTime() + (this_user["charge duration"] * 60 * 1000)), predicted_moved_time, carNum]);
+      res.send([InUse, (new Date(this_user["start time"]).getTime() + (this_user["charge duration"] * 60 * 1000)), park.predicted_moved_time, carNum]);
+      console.log([InUse, (new Date(this_user["start time"]).getTime() + (this_user["charge duration"] * 60 * 1000)), park.predicted_moved_time, carNum]);
       return
     } else output = [FirstTime, void 0, void 0, carNum]
     if (output[0] == FirstTime || output[0] == InQueue) {
@@ -864,8 +882,8 @@ app.get('/', async (req, res) => {
       }
       console.log("charge_finish_time", charge_finish_time);
       // console.log([output[0], queueNum, charger_free_time, output[3]]);
-      res.send([output[0], queueNum, charger_free_time, output[3], predicted_moved_time]);
-      console.log([output[0], queueNum, charger_free_time, output[3], predicted_moved_time]);
+      res.send([output[0], queueNum, charger_free_time, output[3], park.predicted_moved_time]);
+      console.log([output[0], queueNum, charger_free_time, output[3], park.predicted_moved_time]);
       // console.log('[output[0], queueNum, charger_free_time, output[3]]');
       return
     }
@@ -1035,7 +1053,7 @@ app.post("/selected", async (req, resp) => {
     );
     if (log) console.log("result:", result);
     resp.send(result);
-    if (timer._destroyed) {
+    if (park.timer._destroyed) {
       console.log("this client is selected and confirmed, call this client to fetchData")
       send_to_client("message", "fetchData");
       queue_shift();
@@ -1110,7 +1128,7 @@ app.post("/cancal", async (req, resp) => {
 async function queue_shift(exception = void 0) {
   console.log("queue_shiftqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq");
   const log = true;
-  clearTimeout(timer);
+  clearTimeout(park.timer);
   var queue_Interval = null;
   const limit = 1;
   var sort = { "start time": -1 }  //sort by _id; -1==>倒序
@@ -1190,7 +1208,7 @@ async function queue_shift(exception = void 0) {
     // reload_all_client(_id=String(user_who_need_to_charge["_id"]))
     console.log("call user_who_need_to_charge fetchData")
     send_to_client("message", "fetchData", String(user_who_need_to_charge["_id"]))
-    timer = setTimeout(queue_shift, queue_Interval)
+    park.timer = setTimeout(queue_shift, queue_Interval)
     if (log) console.log("next queue_shift" + queue_Interval)
   }
 }
@@ -1239,11 +1257,11 @@ async function call_charger_move_to(spot, _id = void 0) {//added ,_id = void 0
   });
   console.log("need_wait", park.need_wait);
   console.log("millis_to_time_String(need_wait)", millis_to_time_String(park.need_wait));
-  predicted_moved_time = Date.now() + (isNaN(park.need_wait) ? 0 : park.need_wait);
+  park.predicted_moved_time = Date.now() + (isNaN(park.need_wait) ? 0 : park.need_wait);
   console.log("Date.now()", Date.now());
   console.log("millis_to_time_String(Date.now())", millis_to_time_String(Date.now()));
-  console.log("predicted_moved_time", predicted_moved_time);
-  console.log("millis_to_time_String(predicted_moved_time)", millis_to_time_String(predicted_moved_time));
+  console.log("predicted_moved_time", park.predicted_moved_time);
+  console.log("millis_to_time_String(predicted_moved_time)", millis_to_time_String(park.predicted_moved_time));
   // last_queue_shift=Date.now();
   // if (_id !== void 0) send_to_client("message", "fetchData", _id)//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   if (park.need_wait == 0) return Already;
@@ -1261,7 +1279,7 @@ async function call_charger_move_to(spot, _id = void 0) {//added ,_id = void 0
     // console.log("is_charger_complete_move.status",is_charger_complete_move.status);
     // isComplete_list.push(await (await is_charger_complete_move.blob()).text() === "1");
     // const isComplete = isComplete_list.some(a=>a);
-    const isComplete = (Date.now() - predicted_moved_time > 0);
+    const isComplete = (Date.now() - park.predicted_moved_time > 0);
     console.log([isComplete_list.length, isComplete, fetch_count]);
     if (isComplete) {
       clearIntervals(charger_moving_intervals);
@@ -1276,8 +1294,8 @@ async function call_charger_move_to(spot, _id = void 0) {//added ,_id = void 0
       const completed = await check_charger_complete_move();
       if (completed) {
         resolve(); // 在完成後解析 Promise
-      } else if (predicted_moved_time < Date.now())
-        predicted_moved_time = Date.now() + (15 * 1000);
+      } else if (park.predicted_moved_time < Date.now())
+        park.predicted_moved_time = Date.now() + (15 * 1000);
     }, 2000));
   });
 
