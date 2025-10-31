@@ -489,7 +489,8 @@ const park = new Proxy(state, {
 
 });
 park.state_pack_to_client = () => {
-  return {
+  console.log("vvvvvvvvvv state_pack_to_client vvvvvvvvvv");
+  const output=JSON.stringify({
     is_available: park.is_available,
     last_index_loc_comment_cb_time: park.last_index_loc_comment_cb_time,
     predicted_moved_time: park.predicted_moved_time,
@@ -497,7 +498,9 @@ park.state_pack_to_client = () => {
     need_wait: park.need_wait,
     now_spot: park.now_spot,
     timer_destroyed: park.timer._destroyed
-  }
+  });
+  console.log("^^^^^^^^^^ state_pack_to_client ^^^^^^^^^^");
+  return output;
 }
 
 app.get("/is_pack_available", function (req, res) {
