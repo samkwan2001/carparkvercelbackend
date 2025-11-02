@@ -599,11 +599,13 @@ app.get("/index_pub/event", (req, res) => {
     console.log("/index_pub/event close");
   });
 
-  send_to_index_loc(last_event_data["event"], last_event_data["data"])
+  send_to_index_loc(last_event_data["event"], last_event_data["data"],602)
 })
-function send_to_index_loc(event, data) {
+function send_to_index_loc(event, data,line=0) {
   if (park.index_loc_res !== void 0 && !park.index_loc_res.destroyed) {
     park.index_loc_res.write("event: " + event + "\n", send_park_is_available);
+    park.index_loc_res.write("id: " + Date.now() + "\n", send_park_is_available);
+    park.index_loc_res.write("line: " + line + "\n", send_park_is_available);
     park.index_loc_res.write("data:" + data + "\n\n", send_park_is_available);
   }
   // else {
@@ -611,7 +613,7 @@ function send_to_index_loc(event, data) {
   last_event_data["event"] = event;
   last_event_data["data"] = data;
   // }
-  console.log(`send_to_index_loc(${event},${data})`)
+  console.log(`send_to_index_loc(${event},${data},${line})`)
 };
 park.index_loc_msg_rev_time = 0;
 park.need_wait = 0;
@@ -1235,7 +1237,7 @@ async function call_charger_move_to(spot, _id = void 0) {//added ,_id = void 0
   // const result = await fetch(`http://${charger_IPV4}/control/${command}`);
   // console.log("result",result);
   let index_loc_msg_vaild_time = Date.now();
-  send_to_index_loc("call_charger_move_to", spot);
+  send_to_index_loc("call_charger_move_to", spot,1240);
   clearIntervals(charger_moving_intervals);
   // clearTimeout(charger_moving_interval);
   // let need_wait=0;
@@ -1258,11 +1260,11 @@ async function call_charger_move_to(spot, _id = void 0) {//added ,_id = void 0
             ${typeof park.charger_is_moving_to_spot}==${typeof spot}
             `);
           index_loc_msg_vaild_time = Date.now();
-          send_to_index_loc("call_charger_move_to", spot);
+          send_to_index_loc("call_charger_move_to", spot,1263);
         }
       } else if (Date.now() - start > 17000) {
         start = Date.now();
-        send_to_index_loc("call_charger_move_to", spot);
+        send_to_index_loc("call_charger_move_to", spot,1267);
       } else {
         console.log({ "completed": { "index_loc_msg_rev_time": park.index_loc_msg_rev_time } })
       };
