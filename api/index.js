@@ -490,9 +490,17 @@ const park = new Proxy(state, {
 });
 park.state_pack_to_client = () => {
   console.log("vvvvvvvvvv state_pack_to_client vvvvvvvvvv");
-  const output=JSON.stringify({
+  const maxEntry = Object.entries(park.last_index_loc_comment_cb_time).reduce((max, current) => {
+    return current[1] > max[1] ? current : max;
+  }, ['', -Infinity]); // Initialize with an empty key and -Infinity
+
+  const maxKey = maxEntry[0];
+  const maxValue = maxEntry[1];
+  const last_index_loc_comment_cb_time={}
+  last_index_loc_comment_cb_time[maxKey] = maxValue;
+  const output = JSON.stringify({
     is_available: park.is_available,
-    last_index_loc_comment_cb_time: park.last_index_loc_comment_cb_time,
+    last_index_loc_comment_cb_time: last_index_loc_comment_cb_time,
     predicted_moved_time: park.predicted_moved_time,
     charger_is_moving_to_spot: park.charger_is_moving_to_spot,
     need_wait: park.need_wait,
@@ -513,9 +521,10 @@ app.get("/is_pack_available", function (req, res) {
 function send_park_is_available(...args) {
   const m = park.is_available ? "park_is_available" : "pack_not_available"
   send_to_client("message", m);
-  if (m) send_to_client("park", park.state_pack_to_client());
+  // if (m) send_to_client("park", park.state_pack_to_client());
   console.log(`send_to_client ${m}`, args);
 }
+app.get("/res_connection",(req, res) => {res.json(park.res_connection);})
 let _5min_test = void 0;
 let index_pub_event_close_Timeout = setTimeout(() => { });
 let index_pub_event_comment_interval = setInterval(() => { })
@@ -564,9 +573,10 @@ app.get("/index_pub/event", (req, res) => {
   }, 15000, this_async_id);
   index_pub_reconnect_Timeout = setTimeout((this_async_id) => {
     console.log("reconnect /index_pub/event", this_async_id);
-    park.res_connection[this_async_id] = false;
+    park.res_connection[this_async_id] = null;
     res.write("event: reconnect\n");
-    res.write("data:" + String(0) + "\n\n", (e) => { console.log("e", e); res.end() });
+    res.write("data:" + String(0) + "\n\n", (e) => { console.log("e", e);});
+    res.end();
   }, 3 * 60 * 1000, this_async_id);
   req.on("close", () => {
     clearInterval(index_pub_event_comment_interval);
