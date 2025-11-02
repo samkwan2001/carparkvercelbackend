@@ -604,9 +604,9 @@ app.get("/index_pub/event", (req, res) => {
 function send_to_index_loc(event, data,line=0) {
   if (park.index_loc_res !== void 0 && !park.index_loc_res.destroyed) {
     park.index_loc_res.write("event: " + event + "\n", send_park_is_available);
+    park.index_loc_res.write("data:" + data + "\n\n", send_park_is_available);
     park.index_loc_res.write("id: " + Date.now() + "\n", send_park_is_available);
     park.index_loc_res.write("line: " + line + "\n", send_park_is_available);
-    park.index_loc_res.write("data:" + data + "\n\n", send_park_is_available);
   }
   // else {
   // setTimeout(send_to_index_loc,10,(event,data));
