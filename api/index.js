@@ -1,1337 +1,1186 @@
-// const charger_IPV4 = "192.168.0.199";//<<<<<<<<<<
-// const charger_IPV4 = "192.168.137.7";//<<<<<<<<<<
-// const charger_IPV4 = "192.168.4.1";//<<<<<<<<<<
-const express = require('express');
-const mongodb = require('mongodb');
-const { ObjectId } = require('mongodb');
-const MongoClient = mongodb.MongoClient;
-const app = express();
-const port = 7000;
-const cors = require("cors");
-var fs = require('fs');
-const { clearInterval } = require('timers');
-// app.use(cors());
-const is_wall_c = process.env.is_wall_c === "1";
-app.use(cors({
-  origin: [
-    is_wall_c ? 'https://carparktestfrontend-wall-c.vercel.app' : 'https://carparktestfrontend-fork.vercel.app', // 保證只有一個通道
-    'http://localhost:3000', // 測試用
-    'http://192.168.31.18:3000', // 測試用
-    'http://192.168.137.1:3000', // 測試用
-  ],
-  // methods:['GET','POST'],
-  credentials: true
-}));
-// 使用JSON中間件
-app.use(express.json());
+/* eslint-disable react-hooks/exhaustive-deps */
+import logo from './ive_icon.png';
+import './App.css';
+import { useEffect, useState, CSSProperties } from "react";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faEye, faEyeSlash, faL, fas } from '@fortawesome/free-solid-svg-icons';
+import cookie from 'react-cookies';
+import { ClipLoader } from "react-spinners";
+import axios from 'axios';
+import { Scanner } from '@yudiel/react-qr-scanner';
 
-// 資料庫連接資訊
-// const url = 'mongodb://localhost:27017/';
-const url = process.env.MONGODB_URI || 'mongodb://localhost:27017/';
-
-const dbName = 'carpark';
-const collectionName = is_wall_c ? 'carparkcollection-wall-c' : 'carparkcollection';
-
-let db;
-let collection;
-
-const FirstTime = 0;
-const InQueue = 1;
-const InUse = 2;
-const Finish = 3;
-const not_this_user = 4;
-const Already = 1;
-
-function clearIntervals(Intervals = []) {
-  // console.log("Intervals:",Intervals.length);
-  // for (let i = 0; i < Intervals.length; i++) {
-  //     // console.log("Intervals[i]:",Intervals[i]);
-  //     if (!Intervals[i]._destroyed) {
-  //         clearInterval(Intervals[i]);
-  //     }
-  // }
-  for (let i = Intervals.length - 1; i >= 0; i--) {
-    if (Intervals[i] && !Intervals[i]._destroyed) {
-      clearInterval(Intervals[i]);
-      Intervals.splice(i, 1);
-    }
-  }
+const override/*: CSSProperties*/ = {
+  display: "block",
+  margin: "0 auto",
+  // borderColor: "red",
 };
-let log_count = 0;
-let console_log_res = void 0;
-const log = console.log;
-console.log = (...data) => {
 
-
-  var callerName;
-  let callerlist = [];
-  try { throw new Error(); }
-  catch (e) {
-    var st = e.stack
-    st = (st).split("\n")
-    for (let i = 0; i < st.length; i++) {
-      var callerNamePattern = /(\w+)@|at (.*?) \(/g;
-      var fileNamePattern = /\((\S+)\)/g;
-      var flieNameResult = fileNamePattern.exec(st[i]);
-      if (!flieNameResult) continue;
-      var lineNumber = flieNameResult[1].split(":")[2];
-      var callerNameResult = callerNamePattern.exec(st[i]);
-      callerName = callerNameResult ? callerNameResult[1] || callerNameResult[2] : "unknown";
-      if (i == 1 && callerName == "console.log") continue;
-      callerlist.push(`${callerName}:${lineNumber}`);
-    }
-  }
-  callerName = callerlist.reverse().join(" -> ");
-  callerName = `${log_count++}<${callerName}>${Date.now()}`;
-
-  data = data.map(function (item) { try { return JSON.stringify(item); } catch (e) { return `*${item}*`; } })
-  if (console_log_res !== void 0 && !console_log_res.destroyed) {
-    console_log_res.write("event: message\n");
-    console_log_res.write("data:" + callerName + (data.join("|/|")).replace("\n\n", " \n ") + "\n\n");
-  }
-  log(callerName, ...data);
+// Translation dictionary (unchanged from previous solution)
+const translations = {
+  zh: {
+    welcome: "歡迎",
+    parkingSpace: "{carNum}號車位",
+    thereAreXInFront: "前面有",
+    people: "個",
+    youNeedToWait: "你要等",
+    continue: "繼續",
+    cheapestIndoorParking: "IVE Engineering室內停車場",
+    chargingTime: "充電時間:",
+    minutes: "(分鐘)",
+    totalPrice: "充電{chargingTime}分鐘，總費用為{price}元。",
+    confirm: "確定",
+    queuing: "排隊中",
+    moving: "移動中",
+    yourQueueNum: "你排第",
+    timeToStartCharging: "距離開始充電時間還有",
+    movingToSpot: "充電器行駛到閣下的車位需時",
+    cancel: "取消",
+    confirmCancel: "你確定要取消輪候充電?",
+    yes: "是",
+    no: "否",
+    unplugMessage: "請拔除充電接收器，謝謝!",
+    charging: "充電中",
+    remainingTime: "閣下的充電時間剩餘",
+    stop: "停止",
+    confirmStop: "你確定要停止充電嗎?",
+    chargingStopped: "充電已停止",
+    thankYou: "感謝閣下使用，請拔除充電接收器，謝謝！",
+    chargingFinished: "充電已完成",
+    notYourSpot: "此車位已經有其他使用者使用!",
+    dialog_pack_not_available: "充電系統暫時不可用",
+    please_rescan_the_QR_code: "請重新掃描二維碼",
+    I_have_Verification_Code: "我有驗證碼",
+  },
+  en: {
+    welcome: "Welcome",
+    parkingSpace: "Parking Space {carNum}",
+    thereAreXInFront: "There are",
+    people: "people ahead",
+    youNeedToWait: "You need to wait",
+    continue: "Continue",
+    cheapestIndoorParking: "The cheapest indoor car park in Hong Kong",
+    chargingTime: "Charging Time:",
+    minutes: "(minutes)",
+    totalPrice: "Charging for {chargingTime} minutes, total cost is ${price}.",
+    confirm: "Confirm",
+    queuing: "Queuing",
+    moving: "Moving",
+    yourQueueNum: "You are number",
+    timeToStartCharging: "Time left to start charging",
+    movingToSpot: "Time for charger to reach your parking space",
+    cancel: "Cancel",
+    confirmCancel: "Are you sure you want to cancel queuing for charging?",
+    yes: "Yes",
+    no: "No",
+    unplugMessage: "Please unplug the charging receiver, thank you!",
+    charging: "Charging",
+    remainingTime: "Remaining charging time",
+    stop: "Stop",
+    confirmStop: "Are you sure you want to stop charging?",
+    chargingStopped: "Charging has stopped",
+    thankYou: "Thank you for using our service, please unplug the charging receiver!",
+    chargingFinished: "Charging completed",
+    notYourSpot: "This parking space is already in use by another user!",
+    dialog_pack_not_available: "Charging system temporarily unavailable",
+    please_rescan_the_QR_code: "Please rescan the QR code",
+    I_have_Verification_Code: "I have Verification Code",
+  },
 };
-app.get("/console", (req, res) => {
-  console.log("req.url", req.url);
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  console_log_res = res;
-  let interval = setInterval(() => {
-    res.write(": keep connect comment\n\n", (e) => { console.log("comment to /console", e); if (e) clearInterval(interval) });
-  }, 30000);
-  let timeout = setTimeout(() => {
-    console.log("reconnect /console")
-    res.write("event: reconnect\n");
-    res.write("data:" + String(0) + "\n\n", (e) => { console.log("e", e); res.end() });
-  }, 3 * 60 * 1000);
-  req.on("close", () => {
-    clearInterval(interval);
-    clearTimeout(timeout);
-  });
-});
-
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-function millis_to_time_String(durationInMillis) {
-
-  let millis = durationInMillis % 1000;
-  let second = (durationInMillis / 1000) % 60;
-  let minute = (durationInMillis / (1000 * 60)) //% 60;
-  let hour = (durationInMillis / (1000 * 60 * 60));
-  let time = `${Math.floor(hour)}小時${Math.floor(minute)}分鐘 ${Math.floor(second)}.${millis}秒`; //${Math.floor(millis)}`;
-  return time
-}
-var dateFromObjectId = function (objectId) {
-  return new Date(parseInt(objectId.substring(0, 8), 16) * 1000);
-};
-function find_symbol(obj, symbol) {
-  const syms = Object.getOwnPropertySymbols(obj)
-  for (let i = 0; i < syms.length; i++) {
-    if (`Symbol(${symbol})` == syms[i].toString())
-      return syms[i];
+var isEventSupported = (function () {
+  var TAGNAMES = {
+    'select': 'input', 'change': 'input',
+    'submit': 'form', 'reset': 'form',
+    'error': 'img', 'load': 'img', 'abort': 'img'
   }
-  return void 0;
-}
-// 連接資料庫
-async function connectToDatabase() {
-  try {
-    const client = await MongoClient.connect(url, { useUnifiedTopology: true });
-    db = client.db(dbName);
-    collection = db.collection(collectionName);
-    console.log("成功連接到 MongoDB!");
-  } catch (error) {
-    console.error("連接到 MongoDB 失敗:", error);
-    process.exit(1);
-  }
-}
-
-let admin_debug_res = void 0;
-function reload_admin(_id = void 0) {
-  if (admin_debug_res) {
-    admin_debug_res.write("event: message\n");
-    admin_debug_res.write("data:" + String(_id) + "\n\n");
-  }
-}
-let clients = [];
-function reload_all_client(exception = void 0, _id = void 0) {
-  console.log("rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr");
-  let count = 0;
-  clients.forEach(async (client) => {
-    // console.log("client",client)
-    if (!client["res"].destroyed) {
-      // console.log(client["_id"])
-      console.log("reload client" + client["async_id_symbol"], client["_id"])
-      if (client["_id"] == "undefined") return;
-      if (_id != void 0 && client["_id"] != _id) return;
-      client["res"].write("event: message\n");
-      client["res"].write("data:reload\n\n");
-      // client["res"].write("exception:" + exception + "\n\n");
-      count++;
+  function isEventSupported(eventName) {
+    var el = document.createElement(TAGNAMES[eventName] || 'div');
+    eventName = 'on' + eventName;
+    var isSupported = (eventName in el);
+    if (!isSupported) {
+      el.setAttribute(eventName, 'return;');
+      isSupported = typeof el[eventName] == 'function';
     }
-  });
-  console.log("reloaded " + count);
-  reload_admin()
-  return count;
-}
-function send_to_client(event, data, _id = void 0) {
-  console.log("ssssssssssssssssssssssssssssssssssss");
-  let count = 0;
-  clients.forEach(async (client) => {
-    // console.log("client",client)
-    if (!client["res"].destroyed) {
-      // console.log(client["_id"])
-      console.log("sent client", client["async_id_symbol"], client["_id"], ":", { event: event }, { data: data })
-      if (client["_id"] == "undefined") return;
-      if (_id != void 0 && client["_id"] != _id) return;
-      client["res"].write(`event: ${event}\n`);
-      client["res"].write(`data: ${data}\n\n`);
-      // client["res"].write("exception:" + exception + "\n\n");
-      count++;
-    }
-  });
-  console.log("sent " + count);
-  reload_admin()
-  return count;
-}
-let last_queue_shift = 0;
-app.get('/events', (req, res) => {
-  console.log("get /events :" + req.url);
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  let urlparams = new URLSearchParams(req.url.split("?")[1]);
-  console.log("urlparams", urlparams);
-  console.log(urlparams.get("_id") != '"undefined"');
-  console.log(`${urlparams.get("_id")}!=${'"undefined"'}`);
-  console.log("---------------------------------------")
-  let query;
-  if (urlparams.get("_id") && urlparams.get("_id") != '"undefined"' && urlparams.get("_id").length == 26) {
-    query = { _id: new mongodb.ObjectId(urlparams.get("_id").replaceAll("\"", "")) };
+    el = null;
+    return isSupported;
   }
-  const async_id_symbol = res.req.client[find_symbol(res.req.client, "async_id_symbol")]
-  console.log("eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee");
-  const user_agent = String(res.req[find_symbol(res.req, "kHeaders")]["user-agent"])
-  /**/ if (user_agent.indexOf("Edg") >= 0) console.log("Edge");
-  else if (user_agent.indexOf("Firefox") >= 0) console.log("Firefox");
-  else if (user_agent.indexOf("Chrome") >= 0) console.log("Chrome");
-  console.log("async_id_symbol", async_id_symbol);
-  let interval = setInterval(() => {
-    res.write(": keep connect comment\n\n", (e) => { console.log("comment to /events", e); if (e) clearInterval(interval) });
-  }, 30000);
-  let timeout = setTimeout(() => {
-    console.log("reconnect /events")
-    res.write("event: reconnect\n");
-    res.write("data:" + String(0) + "\n\n", (e) => { console.log("e", e); res.end() });
-  }, 3 * 60 * 1000);
-  req.on("close", () => {
-    clearInterval(interval);
-    clearTimeout(timeout);
-  });
-  clients.push({ "_id": urlparams.get("_id").replaceAll("\"", ""), "async_id_symbol": async_id_symbol, "res": res, "interval": interval });
-  console.log(({ "_id": urlparams.get("_id").replaceAll("\"", ""), "async_id_symbol": async_id_symbol }));
-  for (let i = 0; i < clients.length; i++) {
-    if (clients[i].res.destroyed) {
-      clients.splice(i, 1); break;
-    }
-  }
-  console.log("clients.length", clients.length);
-  send_park_is_available("app.get('/events'");
-  fs.writeFile('.count.json', String(clients.length), 'utf8', () => { });
-  const _id = urlparams.get("_id").replaceAll("\"", "")
-  const handle_close = async (...args) => {
-    console.log(args, "closeclclclclclclclclclclclclclclcl");
-    if (args[1]) args[1].send("ok");
-    for (let i = 0; i < clients.length; i++) {
-      if (clients[i].res.destroyed) {
-        clients.splice(i, 1); break;
+  return isEventSupported;
+})();
+
+function App() {
+
+
+  const [Qrscanner_paused, setQrscanner_paused] = useState(true);
+  const Qrscanner = <Scanner
+    paused={Qrscanner_paused}
+    onScan={
+      (result) => {
+        console.log("qr", result);
+        console.log("qr", Qrscanner);
+        console.log("qr", Qrscanner.paused);
+        setQrscanner_paused(true);
+        console.log("qr", Qrscanner.paused);
+        if (result.length === 1) {
+          document.getElementById("qrresult").innerHTML = result[0].rawValue;
+          sessionStorage.setItem("qr", true);
+          sessionStorage.removeItem("finished");
+          console.log("qr", window.location.href = (result[0].rawValue));
+        } else {
+          for (let i = 0; i < result.length; i++) {
+            console.log("qr", (new URL(result[i].rawValue)));
+            const btn = document.createElement("button");
+            btn.innerText = atob((new URL(result[i].rawValue)).pathname.replace("/", ""));
+            sessionStorage.setItem("qr", true);
+            sessionStorage.removeItem("finished");
+            btn.onclick = () => { window.location.href = (result[i].rawValue); }
+            document.getElementById("qrresult").appendChild(btn);
+          }
+        }
       }
-      if (args[0] && args[0].url && args[0].url.replace(/\/close_/, "") == clients[i]._id) clients[i].res.end();
     }
-    console.log("clients.length", clients.length);
-    fs.writeFile('.count.json', String(clients.length), 'utf8', () => { });
-    console.log("async_id_symbol", async_id_symbol);
-    reload_admin();
-    console.log("reload_admin");
-    if (_id == "undefined" || _id.length != 26) return;
-    const limit = 1
-    let sort = { "start time": -1 }
-    const crr_cursor = collection.find(
-      {
-        "_id": new ObjectId(_id),
-      }, { sort, limit }
-    )
-    const crr_rows = await crr_cursor.toArray()
-    console.log("close_rows", crr_rows)
-    const crr_user = crr_rows[0]
-    if (
-      /**/crr_user/**/ !== void 0
-      && crr_user["Parking Space Num"] !== void 0
-      && crr_user["charge duration"] === void 0
-      && crr_user["start time"] === void 0
-    ) {
-      console.log(async_id_symbol, "deletedeletedeletedeletedeletedeletedeletedeletedeletedeletedeletedeletedeletedelete")
-      reload_admin(_id);
-      collection.deleteOne({ "_id": new ObjectId(_id) });
-    } else {
-      console.log("no delete")
-      if (crr_user)
-        console.log(`
-        ${/**/crr_user/**/ !== void 0}
-        &&  ${crr_user["Parking Space Num"] !== void 0}
-        &&  ${crr_user["charge duration"] === void 0}
-        &&  ${crr_user["start time"] === void 0}
-        `)
+    onError={
+      (error) => {
+        console.error("qr", error);
+      }
     }
+  />;
+  // State for current language
+  const [language, setLanguage] = useState('zh'); // Default to Chinese
+  // New: State to store dynamic values for re-rendering
+  const [dynamicValues, setDynamicValues] = useState({
+    queuePosition: null,
+    queueTime: null,
+    ranking: null,
+    movingTime: null,
+    remainingChargeTime: null,
+  });
+  // New: State to control visibility of language toggle button
+  const [showLanguageButton, setShowLanguageButton] = useState(true);
+
+  // Function to toggle language
+  let countdown_loop = () => { console.warn("empty countdown_loop"); };
+  const toggleLanguage = () => {
+    setLanguage(language === 'zh' ? 'en' : 'zh');
+    // New: Hide language button when switching to English
+    if (language === 'zh') {
+      setShowLanguageButton(false);
+    }
+    console.log("updateTotalPrice");
+    console.log(language);
+    updateTotalPrice()
+    // setInterval(() => {console.log(language)},10)
   };
 
+  // Existing code unchanged until noted
+  function nomal(element) {
+    return document.createElement(element);
+  }
+  const minlim = 15;
+  const maxlim = 120;
+  const time_step = 15;
+  var display_time = 15;
+  let user_State_global = -1;
+  const FirstTime = 0;
+  const InQueue = 1;
+  const InUse = 2;
+  const Finish = 3;
+  const not_this_user = 4;
+  let [carNum, setcarNum] = useState("");
 
-
-  req.on("close", handle_close);
-  req.on("end", handle_close);
-  req.on("aborted", handle_close);
-  reload_admin()
-  // res.write("event: message\n");
-  // res.write("data:" + "reload" + "\n\n");
-  if (Date.now() - last_queue_shift < 1000) {
-    // reload_all_client()
-    console.log("last_queue_shift in 1sec ago call this client to fetchData")
-    res.write("event: message\n");
-    res.write("data:fetchData\n\n");
-  }
-});
-app.get("/close", async (req, res) => {
-  console.log("req.url", req.url);
-  let urlparams = new URLSearchParams(req.url.split("?")[1]);
-  const _id = urlparams.get("_id").replaceAll("\"", "")
-  console.log(_id, "closeclclclclclclclclclclclclclclcl");
-  if (res) res.send("ok");
-  for (let i = 0; i < clients.length; i++) {
-    if (clients[i].res.destroyed) {
-      clients.splice(i, 1); break;
-    }
-    //   if(req&&req.url&&req.url.replace(/\/close_/,"")==clients[i]._id)clients[i].res.end();
-  }
-  console.log("clients.length", clients.length);
-  fs.writeFile('.count.json', String(clients.length), 'utf8', () => { });
-  reload_admin();
-  console.log("reload_admin");
-  if (_id == "undefined") return;
-  const limit = 1
-  let sort = { "start time": -1 }
-  const crr_cursor = collection.find(
-    {
-      "_id": new ObjectId(_id),
-    }, { sort, limit }
-  )
-  const crr_rows = await crr_cursor.toArray()
-  console.log("close_rows", crr_rows)
-  const crr_user = crr_rows[0]
-  if (
-      /**/crr_user/**/ !== void 0
-    && crr_user["Parking Space Num"] !== void 0
-    && crr_user["charge duration"] === void 0
-    && crr_user["start time"] === void 0
-  ) {
-    console.log("deletedeletedeletedeletedeletedeletedeletedeletedeletedeletedeletedeletedeletedelete")
-    reload_admin(_id);
-    collection.deleteOne({ "_id": new ObjectId(_id) });
-  } else {
-    console.log("no delete")
-    if (crr_user)
-      console.log(`
-        ${/**/crr_user/**/ !== void 0}
-        &&  ${crr_user["Parking Space Num"] !== void 0}
-        &&  ${crr_user["charge duration"] === void 0}
-        &&  ${crr_user["start time"] === void 0}
-        `)
-  }
-});
-app.get('/admin_debug_events', (req, res) => {
-  console.log("get /admin_debug_events :" + req.url);
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  admin_debug_res = res;
-  let timeout = setTimeout(() => {
-    console.log("reconnect /console")
-    res.write("event: reconnect\n");
-    res.write("data:" + String(0) + "\n\n", (e) => { console.log("e", e); res.end() });
-  }, 3 * 60 * 1000);
-  req.on("close", () => {
-    // clearInterval(interval);
-    clearTimeout(timeout);
+  let interval;
+  let not_time_to_fetchData = true; // Flag to control data fetching timing
+  // // const API_BASE_URL = 'https://carparkvercelbackend.vercel.app';
+  const API_BASE_URL = window.location.hostname.match(/-wall-c/) ? 'https://carparkvercelbackend-wall-c.vercel.app' : 'https://express-flame-two.vercel.app';
+  // const API_BASE_URL = 'http://localhost:7000';
+  const backend = axios.create({
+    baseURL: API_BASE_URL,
+    timeout: 5000,
   });
-});
-app.get("/admin_debug_fetch", async (req, res) => {
-  console.log("get /admin_debug_fetch :" + req.url);
-  const rows = await collection.find({}).toArray();
-  const results = [];
 
-  rows.forEach((row) => {
-    // 使用严格相等比较，并确保类型一致
-    let client = clients.find(client => String(client._id) === String(row._id));
-    const result = { ...row }; // 使用对象展开简化属性复制
-
-    if (client) {
-      // 只复制安全的、可序列化的属性
-      Object.keys(client).forEach(key => {
-        // 排除可能包含循环引用的属性
-        if (key !== "res" && key !== "interval" && client.hasOwnProperty(key)) {
-          result[key] = client[key];
+  const [errorlog, seterrorlog] = useState("");
+  const Errorlog = <textarea readOnly>{errorlog}</textarea>
+  window.onerror = (e) => {
+    // backend.post("/client_error",e.message);
+    seterrorlog(errorlog + "\n" + new Error(e).message);
+  }
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+  async function getMongo_userState(_carNum) {
+    console.log("_carNum" + _carNum);
+    while (1) {
+      try {
+        console.log("try time get data from backend");
+        not_time_to_fetchData = !((await backend.get("/is_pack_available")).data.answer)
+        if (not_time_to_fetchData) throw new Error("not time to fetchData");
+        let output = [];
+        if (sessionStorage.getItem("finished") !== null) throw new Error("session finished");
+        const carNum_response = await backend.get("/", {
+          params: {
+            'Parking Space Num': _carNum,
+            _id: `"${cookie.load("_id")}"`
+          }
+        });
+        console.log(carNum_response);
+        console.log(carNum_response.data);
+        return carNum_response.data;
+      } catch (error) {
+        console.error('Error fetching data: ', error);
+        if (sessionStorage.getItem("finished") !== null) {
+          console.log("stop getMongo_userState because sessionStorage finished");
+          throw new Error("Promise rejected: sessionStorage finished");
         }
-      });
+        await sleep(3000);
+        // throw error;
+      }
     }
+  }
 
-    results.push(result);
-  });
+  function millis_to_time_String(durationInMillis) {
+    let millis = durationInMillis % 1000;
+    let second = (durationInMillis / 1000) % 60;
+    let minute = (durationInMillis / (1000 * 60));
+    console.log("millis_to_time_String", language)
+    let time = language === 'zh'
+      ? `${Math.floor(minute)}分鐘 ${Math.floor(second)}秒`
+      : `${Math.floor(minute)} min ${Math.floor(second)} sec`;
+    return time;
+  }
 
-  // 处理没有对应数据库记录的客户端
-  clients.forEach((client) => {
-    // 检查条件修正：寻找没有_id或_id未在数据库中的客户端
-    if (!client._id || rows.some(row => String(row._id) === String(client._id))) {
+  let useEffect_lock = false;
+  let eventSource = void 0;
+  let eventMTloop = void 0;
+  let dont_reload = false;
+  let last_useEffect = 0;
+
+  function close_dialog(dialog) {
+    document.getElementById("pack_not_available_dialog")["programed_close"] = true;
+    dialog.close()
+  }
+  function after_useEffect() {
+    if (useEffect_lock) {
+      function eventMT() {
+        if (user_State_global == Finish || user_State_global == not_this_user) {
+          console.log("stop eventMT because user_State is", user_State_global == Finish ? "Finish" : user_State_global == not_this_user ? "not_this_user" : "other");
+          clearInterval(eventMTloop);
+        }
+        if (sessionStorage.getItem("finished") !== null) {
+          console.log("stop eventMT because sessionStorage finished");
+          clearInterval(eventMTloop);
+        }
+        console.log(millis_to_time_String(Date.now() - last_useEffect));
+        if (cookie.load("_id") === void 0
+          // && Date.now() - last_useEffect < 1500
+        ) return;
+        else clearInterval(eventMTloop);
+        function start_eventSource() {
+          eventSource = new EventSource(`${API_BASE_URL}/events?_id="${cookie.load("_id")}"`);
+          console.log("eventSource", eventSource);
+          eventSource.onmessage = (event) => {
+            const data = (event.data);
+            console.log('接收到事件:', event.type);
+            console.log('接收到事件數據:', data);
+            console.log("exception:", data.exception)
+            if (event.data == "park_is_available") {
+              if (document.getElementById("pack_not_available_dialog")) close_dialog(document.getElementById("pack_not_available_dialog"));
+              not_time_to_fetchData = false; console.log("park_is_available", not_time_to_fetchData);
+            } else if (event.data == "pack_not_available") {
+              if (document.getElementById("pack_not_available_dialog")) document.getElementById("pack_not_available_dialog").showModal();
+              not_time_to_fetchData = true; console.log("pack_not_available", not_time_to_fetchData);
+            } else if ((
+              (document.getElementById("SelectChargingTime")
+                && document.getElementById("SelectChargingTime").style.display == "none")
+              || (document.getElementById("confirmBtn")
+                && document.getElementById("confirmBtn").style.display == "none")
+            )
+              &&
+              document.getElementById("ExistingUsing_stop_btn")
+              && document.getElementById('ExistingUsing_stop_btn').style.display == ''
+              &&
+              document.getElementById("cancelbtn")
+              && document.getElementById("cancelbtn").style.display == ""
+              // !dont_reload
+            ) {
+              console.log(event.data);
+              console.log(event.data == "reload");
+              console.log(event.data == "fetchData");
+              if (event.data == "reload") {
+                console.log("reload");
+                redirectToNextPage();
+              }
+              if (event.data == "fetchData") {
+                console.log("fetchData");
+                fetchData();
+              }
+            } else
+              console.log(
+                `don't reload
+              (
+              (${document.getElementById("SelectChargingTime")}
+                && ${document.getElementById("SelectChargingTime").style.display == "none"})
+              || (${document.getElementById("confirmBtn")}
+                && ${document.getElementById("confirmBtn").style.display == "none"})
+              )
+              &&
+              ${document.getElementById("ExistingUsing_stop_btn")}
+              &&${document.getElementById('ExistingUsing_stop_btn').style.display == ''}
+              &&
+              ${document.getElementById("cancelbtn")}
+              &&${document.getElementById("cancelbtn").style.display == ""}
+                `
+              );
+          };
+          eventSource.onerror = (error) => {
+            console.log(`eventSource error: `, error);
+            if (sessionStorage.getItem("finished") === null)
+              setTimeout(() => {
+                start_eventSource();
+                console.log(`start_eventSource finfsh`);
+              }, 3000);
+          };
+
+          eventSource.addEventListener('reconnect', (event) => {
+            eventSource.close();
+            console.log("reconnect", new Date(), ":", event.type);
+            start_eventSource();
+          });
+          eventSource.addEventListener("need_wait", (event) => {
+            console.log("need_wait", event.data, typeof event.data);
+            if (!isNaN(parseInt(event.data))) {
+              const expires = new Date(Date.now() + 5000);
+              cookie.save(
+                'need_wait',
+                event.data,
+                {
+                  path: '/',
+                  expires,
+                });
+              document.getElementById("There are x minutes left to start charging").innerHTML = millis_to_time_String(parseInt(event.data));
+            }
+          });
+          eventSource.addEventListener("park", (event) => {
+            console.log(event.data);
+            console.log(JSON.parse(event.data));
+          })
+        }
+        start_eventSource();
+      }
+      eventMTloop = setInterval(eventMT, 500);
+      last_useEffect = Date.now()
+      window.onbeforeunload = function () {
+        if (
+          document.getElementById("welcome")
+          && document.getElementById("welcome").style.display != "none"
+        ) {
+          try {
+            if (cookie.load("_id")) {
+              fetch(`${API_BASE_URL}/close?_id="${cookie.load("_id")}"`)
+                .then((...args) => {
+                  // cookie.remove("_id");
+                })
+              cookie.remove("_id");
+            }
+            if (eventSource !== void 0) {
+              eventSource.close();
+              eventSource = null;
+              // cookie.remove("_id");
+            }
+          }
+          catch { };
+        }
+      }
+
+
       return;
     }
-
-    const result = {};
-    Object.keys(client).forEach(key => {
-      if (key !== "res" && key !== "interval" && client.hasOwnProperty(key)) {
-        result[key] = client[key];
-      }
-    });
-
-    results.push(result);
-  });
-
-  res.send(JSON.stringify(results))//https://www.doubao.com/chat/19096510861621506
-});
-// const msg_msgNtime=[]
-let last_event_data = {}
-// let park.index_loc_res = void 0;
-const target_res_connection = {};
-const proxied_res_connection = new Proxy(target_res_connection, {
-  get(target, prop) {
-    return target[prop];
-  },
-  set(target, prop, value) {
-    console.log(`${prop} 被赋值为: ${value}`);
-    target[prop] = value;
-    console.log(target);
-    return true;
-  }
-});
-// 创建包含状态的对象
-const state = {
-  is_available: false,
-  _is_available_fales_times: 0,
-  index_loc_res: void 0,
-  res_connection: proxied_res_connection,
-  timer: setTimeout(async () => {
-    // clearTimeout(timer);
-  }, 0),
-  now_spot: 0,
-  need_wait: 0,//time left from pev_spot to now_spot
-  pev_spot: 0,
-  index_loc_msg_rev_time: 0,
-  charger_is_moving_to_spot: 0,
-  predicted_moved_time: 0,
-  last_index_loc_comment_cb_time: {},
-};
-let get_available_times = 0;
-// 创建代理监控属性变化
-const park = new Proxy(state, {
-
-  get(target, prop) {
-    if (prop === 'is_available') {
-      const 輔助 = Object.values(target.res_connection).some(value => value === true);
-      console.log(`获取 is_available 的值: 實際${target[prop]} 輔助${輔助}`, `${get_available_times++}次 `);
-      if (!輔助) console.log(target.res_connection);
-      return target[prop] || 輔助;
-    } else if (prop === 'last_index_loc_comment_cb_time') {
-      console.log(`获取 last_index_loc_comment_cb_time 的值:`, target[prop]);
-    } else if (prop === 'index_loc_res') {
-      console.log(`获取 index_loc_res 的值, async_id: ${target[prop]?.req?.client[find_symbol(target[prop].req.client, "async_id_symbol")]}`);
-    }
-    return target[prop];
-  },
-  set(target, prop, value) {
-    if (prop === 'is_available') {
-      // console.log(`is_available 被赋值为: ${value} `, !value ? `${target._is_available_fales_times}次` : "", `被获取${get_available_times}次`);
-      // if (value) { target._is_available_fales_times = 0; target.is_available = true; }
-      // else {
-      //   if (target._is_available_fales_times < 3) {
-      //     target._is_available_fales_times++;
-      //   } else {
-      //     target._is_available_fales_times = 0;
-      //     target.is_available = false;
-      //   }
-      // }
-      console.log(`is_available 被赋值为: ${value} `, `被获取${get_available_times}次`);
-      target[prop] = value;
-      // 可以在这里添加额外逻辑，如验证、日志等
-      // } else if (prop === 'last_index_loc_comment_cb_time') {
-      //   console.log(`last_index_loc_comment_cb_time 被赋值为: ${value}`);
-      // 可以在这里添加额外逻辑，如验证、日志等
-      target[prop] = value;
-    } else if (prop === 'index_loc_res') {
-      target[prop] = value;
-      const async_id = target[prop].req.client[find_symbol(target[prop].req.client, "async_id_symbol")]
-      target.res_connection[async_id] = true;//
-      console.log(`index_loc_res 被赋值为...async_id: ${async_id}`);
-    } else target[prop] = value;
-    // if (prop !== 'is_available') target[prop] = value; // 执行实际赋值
-    return true; // 表示赋值成功
   }
 
-});
-park.state_pack_to_client = () => {
-  console.log("vvvvvvvvvv state_pack_to_client vvvvvvvvvv");
-  const maxEntry = Object.entries(park.last_index_loc_comment_cb_time).reduce((max, current) => {
-    return current[1] > max[1] ? current : max;
-  }, ['', -Infinity]); // Initialize with an empty key and -Infinity
-
-  const maxKey = maxEntry[0];
-  const maxValue = maxEntry[1];
-  const last_index_loc_comment_cb_time={}
-  last_index_loc_comment_cb_time[maxKey] = maxValue;
-  const output = JSON.stringify({
-    is_available: park.is_available,
-    last_index_loc_comment_cb_time: last_index_loc_comment_cb_time,
-    predicted_moved_time: park.predicted_moved_time,
-    charger_is_moving_to_spot: park.charger_is_moving_to_spot,
-    need_wait: park.need_wait,
-    now_spot: park.now_spot,
-    timer_destroyed: park.timer._destroyed
-  });
-  console.log("^^^^^^^^^^ state_pack_to_client ^^^^^^^^^^");
-  return output;
-}
-
-app.get("/is_pack_available", function (req, res) {
-  // for (let i = 0; i < 10; i++) {
-  //   const _ = park.is_available;
-  // }
-  res.send({ "answer": park.is_available, "time": Date.now() });
-  send_park_is_available(`app.get("/is_pack_available"`);
-});
-function send_park_is_available(...args) {
-  const m = park.is_available ? "park_is_available" : "pack_not_available"
-  send_to_client("message", m);
-  // if (m) send_to_client("park", park.state_pack_to_client());
-  console.log(`send_to_client ${m}`, args);
-}
-app.get("/res_connection",(req, res) => {res.json(park.res_connection);})
-let _5min_test = void 0;
-let index_pub_event_close_Timeout = setTimeout(() => { });
-let index_pub_event_comment_interval = setInterval(() => { })
-let index_pub_reconnect_Timeout = setTimeout(() => { });
-app.get("/index_loc/comment_cb", function (req, res) {
-  let urlparams = new URLSearchParams(req.url.split("?")[1]);
-  const async_id = urlparams.get("async_id");
-  park.last_index_loc_comment_cb_time[async_id] = Date.now();
-  park.res_connection[async_id] = true;
-  res.send(`ok${async_id}`);
-  park.is_available = true;
-})
-app.get("/index_pub/event", (req, res) => {
-  console.log("req.url", req.url);
-  clearTimeout(index_pub_event_close_Timeout);
-  clearTimeout(index_pub_reconnect_Timeout);
-  clearInterval(index_pub_event_comment_interval);
-  park.index_loc_res = res;
-  const this_async_id = res.req.client[find_symbol(res.req.client, "async_id_symbol")];
-  park.is_available = true;
-  park.res_connection[this_async_id] = true;
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  index_pub_event_comment_interval = setInterval(function (this_async_id) {
-    const start = Date.now();
-    res.write("event: comment\n");
-
-    res.write(`data: keep connect comment, your id is ${this_async_id}\n\n`, function (e) {
-      console.log("index_pub_event.data: keep connect comment", e)
-    });
-    const timeout = 5000;
-    setTimeout(function (_this_async_id) {
-      console.log(`park.last_index_loc_comment_cb_time[_this_async_id] > start`, `${park.last_index_loc_comment_cb_time[_this_async_id]} > ${start}`);
-      console.log(`park.last_index_loc_comment_cb_time[_this_async_id] > start`, `${park.last_index_loc_comment_cb_time[_this_async_id]} > ${start}`);
-      if (park.last_index_loc_comment_cb_time[_this_async_id] > start) park.res_connection[_this_async_id] = true;
-      // else { park.is_available = false; console.log("park.is_available = false;//didn't receive any callback",_this_async_id); }
-      else {
-        park.res_connection[_this_async_id] = false;
-        console.log("park.res_connection[_this_async_id]=false;//didn't receive any callback", _this_async_id);
-        res.end();
-      }
-      send_park_is_available("index_pub_event_comment_interval");
-    }, timeout, this_async_id);
-  }, 15000, this_async_id);
-  index_pub_reconnect_Timeout = setTimeout((this_async_id) => {
-    console.log("reconnect /index_pub/event", this_async_id);
-    park.res_connection[this_async_id] = null;
-    res.write("event: reconnect\n");
-    res.write("data:" + String(0) + "\n\n", (e) => { console.log("e", e);});
-    res.end();
-  }, 3 * 60 * 1000, this_async_id);
-  req.on("close", () => {
-    clearInterval(index_pub_event_comment_interval);
-    clearTimeout(index_pub_event_close_Timeout);
-    index_pub_event_close_Timeout = setTimeout(function () {
-      console.log("/index_pub/event close timeout", this_async_id, park.index_loc_res.req.client[find_symbol(res.req.client, "async_id_symbol")]);
-      console.log("/index_pub/event close timeout", typeof this_async_id, typeof park.index_loc_res.req.client[find_symbol(res.req.client, "async_id_symbol")]);
-      park.res_connection[this_async_id] = false;
-      if (this_async_id == park.index_loc_res.req.client[find_symbol(res.req.client, "async_id_symbol")]) {
-        park.is_available = false;
-        console.log(`this_async_id == park.index_loc_res.req.client[find_symbol(res.req.client, "async_id_symbol")]`);
-        console.log(`
-          this_async_id:${this_async_id},
-          res.req.client[find_symbol(res.req.client, "async_id_symbol")]:${res.req.client[find_symbol(res.req.client, "async_id_symbol")]},
-          park.index_loc_res.req.client[find_symbol(res.req.client, "async_id_symbol")]:${park.index_loc_res.req.client[find_symbol(res.req.client, "async_id_symbol")]},
-      `)
-      }
-      send_park_is_available("index_pub_event_close_Timeout");
-    }, 3000);
-    console.log("/index_pub/event close");
-  });
-
-  send_to_index_loc(last_event_data["event"], last_event_data["data"],602)
-})
-function send_to_index_loc(event, data,line=0) {
-  if (park.index_loc_res !== void 0 && !park.index_loc_res.destroyed) {
-    park.index_loc_res.write("event: " + event + "\n", send_park_is_available);
-    park.index_loc_res.write("data:" + data + "\n\n", send_park_is_available);
-    park.index_loc_res.write("id: " + Date.now() + "\n", send_park_is_available);
-    park.index_loc_res.write("line: " + line + "\n", send_park_is_available);
+  let fetchData = void 0;
+  function ondialogclose(e) {
+    if (!document.getElementById("pack_not_available_dialog")["programed_close"]) e.target.showModal()
+    else document.getElementById("pack_not_available_dialog")["programed_close"] = false;
+    console.log(e, e.target.closedBy, e.target.open)
+    // fetch(`/return?event=${e}`)
   }
-  // else {
-  // setTimeout(send_to_index_loc,10,(event,data));
-  last_event_data["event"] = event;
-  last_event_data["data"] = data;
-  // }
-  console.log(`send_to_index_loc(${event},${data},${line})`)
-};
-park.index_loc_msg_rev_time = 0;
-park.need_wait = 0;
-park.charger_is_moving_to_spot = 0;
-app.get("/index_loc/push", (req, res) => {
-  const log = true;
-  console.log('get"/index_loc/push"')
-  park.is_available = true;
-  send_park_is_available(`app.get("/index_loc/push"`);
-  if (log) console.log('app.get("/index_loc/push")' + req.url);
-  if (log) console.log('app.get("/index_loc/push")' + decodeURI(req.url));
-  // if(log)console.log("req",req);
-  var params = new URLSearchParams(req.url.split("?")[1]);
-  if (log) console.log("params", params);
-  if (params.get("spot") !== void 0) {
-    console.log('req.url', req.url);
-    console.log('req.url.split("?")[1]', req.url.split("?")[1]);
-    console.log('params', params);
-    console.log('park.charger_is_moving_to_spot = parseInt(params.get("spot"));', params.get("spot"));
-    park.charger_is_moving_to_spot = parseInt(params.get("spot"));
-  }
-  if (params.get("need_wait") !== void 0) {
-    park.need_wait = parseInt(params.get("need_wait"));
-    park.index_loc_msg_rev_time = Date.now();
-    send_to_client("need_wait", park.need_wait);
-  }
-  console.log("need_wait", park.need_wait);
-  console.log("index_loc/push", "index_loc_msg_rev_time", park.index_loc_msg_rev_time);
-  res.send("OK");
-})
-app.get("/admin_debug.html", (req, res) => {
-  console.log("get /admin_debug :" + req.url);
-  // fs.readFile(path.join(__dirname, '..admin_debug.html'),(...a)=>{res.send(a[1].toString("utf-8"))});
-  res.send(process.env.admin_debug_html);
-});
-app.get("/sorttable.js", (req, res) => {
-  console.log("get /admin_debug :" + req.url);
-  // res.sendFile(path.join(__dirname, 'sorttable.js'));
-  res.send(process.env.sorttable_js);
-});
-app.get("/qr", (req, res) => {
-  res.send(`<div id="container"></div><script src="https://cdn.jsdelivr.net/npm/qrcodejs2"></script>
-<script>
-    var host = "https://carparktestfrontend-fork.vercel.app"
-    var host_wall_c = "https://carparktestfrontend-wall-c.vercel.app"
-    // 生成 QR code
-    const container = document.getElementById("container");
-    container.style.display = "grid";
-    container.style.gridTemplateColumns = "repeat(3,33.33%)";
-    container.style.gridTemplateRows = "repeat(4,33.33%)";
-    for (let i = 1; i < 12; i++) {
-        const qr_div = document.createElement("div");
-        const url = ((i<=6?host:host_wall_c) + "/" + btoa(i));
-        new QRCode(qr_div, url);
-        const label = document.createElement("h1");
-        label.innerText = i;
-        qr_div.appendChild(label);
-        container.appendChild(qr_div);
-        label.style.textCombineUpright = "all";
-        label.style.marginBlockStart = "-10px";
-        label.style.textAlign = "center"
-        qr_div.style.marginBlockStart = "50px";
-        qr_div.childNodes.forEach((node)=>{
-            console.log("node",node);
-            // console.log(node.tagName,node.tagName=="IMG")
-            if (node.tagName == "IMG") {
-                node.style.marginLeft = "auto"
-                node.style.marginRight = "auto"
-                console.log(node.style.marginLeft,
-                node.style.marginRight)
-            }})}
-</script>`,
-  )
-})
+  useEffect(() => {
+    // updateTotalPrice()
+    if (useEffect_lock) return;
+    useEffect_lock = true; console.log(useEffect_lock);
+    console.log("useEffect");
+
+    console.log('sessionStorage.getItem("finished")', sessionStorage.getItem("finished"), typeof sessionStorage.getItem("finished"));
+    console.log(performance.navigation.type)
 
 
-
-// 主路由處理查詢請求
-app.get('/', async (req, res) => {
-  const log = false;
-  console.log('get"/"');
-  try {
-    let output = [];
-    // const FirstTime = 0;
-    // const InQueue = 1;
-    // const InUse = 2;
-    // const Finish = 3;
-    // const not_this_user = 4;
-    // 創建基本查詢對象
-    let query = {};
-    let sort = {};
-    let limit = 0;
-    let urlparams = new URLSearchParams(req.url.split("?")[1]);
-    console.log("urlparams", urlparams);
-    console.log(urlparams.get("_id") != '"undefined"');
-    console.log(`${urlparams.get("_id")}!=${'"undefined"'}`);
-    console.log("---------------------------------------")
-    let this_user = undefined;
-    if (urlparams.get("_id") != '"undefined"' && urlparams.get("_id").length == 26) {
-      query = { _id: new mongodb.ObjectId(urlparams.get("_id").replaceAll("\"", "")) };
-      console.log("query", query)
-      // 執行查詢
-      let cursor = collection.find(query).sort(sort);
-      if (limit > 0) {
-        cursor = cursor.limit(limit);
-      }
-      const results = await cursor.toArray();
-
-      this_user = results[0];  // 將this_user賦汝一個值,個值是carNum_response.data既第0個值  ===> carNum_response.data既第0個
-      console.log("this_user", this_user)
-      if (this_user === undefined && urlparams.get("Parking Space Num") !== void 0) {
-        if (urlparams.get("Parking Space Num") === undefined
-          || +urlparams.get("Parking Space Num") < 1
-          || +urlparams.get("Parking Space Num") > 11
-        ) return;
-        const result = await collection.insertOne(
-          {
-            "_id": query["_id"],
-            "Parking Space Num": urlparams.get("Parking Space Num")
-          }
-        );
-        reload_admin()
-      }
-    }
-    let carNum = "?";
-    if (this_user === undefined) carNum = urlparams.get("Parking Space Num");
-    else carNum = this_user["Parking Space Num"];
-    console.log('carNum', carNum)
-    console.log("this_user", this_user)
-    if (this_user === undefined || this_user["charge duration"] === undefined) {
-      console.log(urlparams.get("Parking Space Num"))
-      const limit = 1
-      let sort = { "_id": -1 }
-      const charging_cursor = collection.find(
-        {
-          // "start time": { "$exists": true },
-          "charge duration": { $gt: 0 },
-          "Parking Space Num": +urlparams.get("Parking Space Num")   // key: value
-        }, { sort, limit }
+    console.log(
+      `(
+      (${performance.navigation.type}==0 && !${sessionStorage.getItem("qr")}// * (user replace new link or duplicate tab)
+      &&${sessionStorage.getItem("id")}                                // * and this_page id exists
+      )||${sessionStorage.getItem("finished")}!==void 0                 // * or this_page finished
+    )\n`,
+      `(
+      (${performance.navigation.type == 0}&& ${!sessionStorage.getItem("qr")} // * (user replace new link or duplicate tab)
+      &&${sessionStorage.getItem("id")}                                // * and this_page id exists
+      )||${sessionStorage.getItem("finished") !== null}                 // * or this_page finished
+    )\n`,
+      `(
+      ${(performance.navigation.type == 0 && !sessionStorage.getItem("qr")// * (user replace new link or duplicate tab)
+        && sessionStorage.getItem("id")                                // * and this_page id exists
+      )}||${sessionStorage.getItem("finished") !== null}                 // * or this_page finished
+    )\n`,
+      (
+        (performance.navigation.type == 0 && !sessionStorage.getItem("qr")// * (user replace new link or duplicate tab)
+          && sessionStorage.getItem("id")                                // * and this_page id exists
+        ) || sessionStorage.getItem("finished") !== null                 // * or this_page finished
       )
-      const charging_rows = await charging_cursor.toArray()
-      console.log("charging_rows", charging_rows)
-      const charging_user = charging_rows[0]
-      if (charging_user !== undefined) {
-        if (charging_user["start time"] !== undefined && (new Date(charging_user["start time"]).getTime() + (charging_user["charge duration"] * 60 * 1000)) - new Date(Date.now()).getTime() < 0) {
-          // charging_user finish
-          // const limit = 1
-          // let sort = { "_id": -1 }
-          // const selecting_cursor = collection.find(
-          //   {
-          //     // "start time": { "$exists": true },
-          //     // "charge duration": { $gt: 0 },
-          //     "Parking Space Num": +urlparams.get("Parking Space Num")   // key: value
-          //   }, { sort, limit }
-          // )
-          // const selecting_rows = await selecting_cursor.toArray()
-          // console.log("selecting_rows",selecting_rows)
-          // const selecting_user = selecting_rows[0]
-          // if(
-          //   /**/selecting_user/**/                  !==void 0
-          //   &&  selecting_user["Parking Space Num"] !==void 0
-          //   &&  selecting_user["charge duration"]   ===void 0
-          //   &&  selecting_user["start time"]        ===void 0
-          //   &&  selecting_user["_id"]!=(urlparams.get("_id").replaceAll("\"", ""))
-          // ){// selecting user exists
-          //   console.log("selecting user exists/-/-/-/-")
-          //   console.log(`${selecting_user["_id"]}!=${new mongodb.ObjectId(urlparams.get("_id").replaceAll("\"", ""))}`)
-          //   console.log(selecting_user["_id"]!=new mongodb.ObjectId(urlparams.get("_id").replaceAll("\"", "")))
-          //   res.send([not_this_user, void 0, void 0, carNum]);
-          //   console.log([not_this_user, void 0, void 0, carNum]);
-          //   return;
-          // }
-          console.log("charging_user finish and no selecting user in this carNum/-/-/-/-")
-          output = [FirstTime, void 0, void 0, carNum]
-          console.log(`(${new Date(charging_user["start time"]).getTime()} + ${(charging_user["charge duration"] * 60 * 1000)}) - ${new Date(Date.now()).getTime()}`)
-          console.log((new Date(charging_user["start time"]).getTime() + (charging_user["charge duration"] * 60 * 1000)) - new Date(Date.now()).getTime())
+    );
+
+    if (
+      ((performance.navigation.type == 0 && !sessionStorage.getItem("qr"))// * (user replace new link or duplicate tab)
+        && sessionStorage.getItem("id")                                // * and this_page id exists
+      ) || sessionStorage.getItem("finished") !== null                 // * or this_page finished
+    ) sessionStorage.setItem("id", sessionStorage.getItem("id") - 1)    // * then set this_page id to this_page id - 1
+    sessionStorage.setItem("qr", false);
+    //if          no this_page id    or replace link by scanning QRcode   then set this_page id to Date.now()
+    if (!sessionStorage.getItem("id") || sessionStorage.getItem("qr")) sessionStorage.setItem("id", Date.now())
+    //if     no Latest_id      or              Latest_id < this_page id                then set cookie Latest_id to this_page id
+    if (!cookie.load("Latest_id") || cookie.load("Latest_id") < sessionStorage.getItem("id")) cookie.save("Latest_id", sessionStorage.getItem("id"));
+    let check_Latest = (..._) => {
+      return (check_Latest = ((..._) => {
+        console.log("check_Latest", cookie.load("Latest_id"), sessionStorage.getItem("id"));
+        const out = cookie.load("Latest_id") != sessionStorage.getItem("id")
+        if (out) {
+          document.getElementById("link_not_believable_dialog").showModal(); setQrscanner_paused(false);
         }
-        else {// charging_user not finish
-          console.log("charging_user not finish/-/-/-/-")
-          res.send([not_this_user, void 0, void 0, carNum]);
-          console.log([not_this_user, void 0, void 0, carNum]);
+        return (..._) => { console.log("check_Latest inner", !out); if (out) { document.getElementById("link_not_believable_dialog").showModal(); setQrscanner_paused(false); } return !out };
+      })())()
+    }
+    window.addEventListener(isEventSupported("pagereveal") ? "pagereveal" : "load", check_Latest)
+    window.addEventListener(isEventSupported("focus") ? "focus" : "load", check_Latest)
+
+
+
+
+
+    document.getElementById("pack_not_available_dialog")["programed_close"] = false;
+    // Check if the session finished is not defined
+    if (sessionStorage.getItem("finished") === null)
+      backend.get("/is_pack_available").then((response) => {
+        if (!response.data)
+          if (document.getElementById("pack_not_available_dialog"))
+            document.getElementById("pack_not_available_dialog").showModal();
+        console.log("is_pack_available", response.data);
+        not_time_to_fetchData = !check_Latest() || !response.data;
+        console.log(`${not_time_to_fetchData}=${!check_Latest()}||${!response.data};`);
+      });
+    else { document.getElementById("link_not_believable_dialog").showModal(); setQrscanner_paused(false); }
+    if (document.getElementById("pack_not_available_dialog"))
+      document.getElementById("loading繼續").style.height = document.getElementById("after_cookie").style.height;
+    console.log(document.getElementById("after_cookie").style);
+    for (let i = 1; i < 12; i++) console.log(window.location.host + "/" + btoa(i));
+    console.log(window.location.pathname);
+    const carNum_base64 = window.location.pathname.substring(1);
+    console.log(carNum_base64);
+    setcarNum(atob(carNum_base64));
+    document.title = translations[language].parkingSpace.replace('{carNum}', atob(carNum_base64));
+    const react_def_app = document.getElementById("react_def_app");
+    react_def_app.style.display = "none";
+    const SelectChargingTime = document.getElementById("SelectChargingTime");
+    SelectChargingTime.style.display = "none";
+    let queue_endtime = undefined;
+    let charge_endtime = undefined;
+    fetchData = () => {
+      console.log("atob(carNum_base64)=" + atob(carNum_base64));
+      getMongo_userState(atob(carNum_base64))
+        .then(async (params) => {
+          setcarNum(params[3]);
+          const user_State = params[0];
+          user_State_global = user_State;
+          console.log(user_State);
+          console.log(params);
+          const SelectChargingTime = document.getElementById("SelectChargingTime");
+          SelectChargingTime.style.display = "none";
+          if (user_State != FirstTime) {
+            console.log("user_State != FirstTime");
+            const welcome = document.getElementById("welcome");
+            welcome.style.display = "none";
+          } else {
+            const welcome = document.getElementById("welcome");
+            welcome.style.display = "";
+            console.log("FirstTime");
+            console.log(params);
+            console.log(params[0]);
+            console.log(params[1]);
+            console.log(params[2]);
+            document.getElementById("There are x in front").innerHTML = params[1] - 1;
+            const time = (params[2] - new Date(Date.now()).getTime());
+            console.log(`(${params[2]} - ${new Date(Date.now()).getTime()})`);
+            document.getElementById("You need to wait x minutes").innerHTML = millis_to_time_String(time < 0 ? 0 : time);
+            queue_endtime = (params[2]);
+            // New: Store dynamic values for language toggle
+            setDynamicValues(prev => ({
+              ...prev,
+              queuePosition: params[1] - 1,
+              queueTime: time < 0 ? 0 : time,
+            }));
+            console.log(cookie.load("_id"));
+            console.log(cookie.load("_id") === undefined);
+            if (cookie.load("_id") === undefined) {
+              const carNum_base64 = window.location.pathname.substring(1);
+              const response = await backend.post("/register", null,
+                {
+                  params: {
+                    'Parking Space Num': atob(carNum_base64),
+                  }
+                }
+              );
+              console.log(response);
+              const expires = new Date(Date.now() + 1000 * 60 * 60 * 24 * 3);
+              console.log(expires);
+              console.log(window.location.host);
+              cookie.save(
+                '_id',
+                response.data,
+                {
+                  path: '/',
+                  expires,
+                });
+              console.log(cookie.load("_id"));
+            }
+          }
+          if (user_State != InQueue) {
+            console.log("user_State != InQueue");
+            const Queuing = document.getElementById("Queuing");
+            Queuing.style.display = "none";
+          } else {
+            const Queuing = document.getElementById("Queuing");
+            Queuing.style.display = "";
+            console.log("InQueue");
+            document.getElementById("You are in ranking X").innerHTML = params[1];
+            const time = (params[2] - new Date(Date.now()).getTime());
+            if (params[1] == 1 && params[4] && Date.now() < params[4]) {
+              const moveing_time = (params[4] - new Date(Date.now()).getTime());
+              // document.getElementById("There are x minutes left to start charging").innerHTML = millis_to_time_String(moveing_time < 0 ? 0 : moveing_time);
+              if (moveing_time < 0)
+                document.getElementById("There are x minutes left to start charging").innerHTML = millis_to_time_String(0);
+              else if (moveing_time == 0)
+                document.getElementById("There are x minutes left to start charging").innerHTML = millis_to_time_String(parseInt(cookie.load("need_wait")));
+              else
+                document.getElementById("There are x minutes left to start charging").innerHTML = millis_to_time_String(moveing_time);
+              queue_endtime = (params[4]);
+              document.getElementById("InQueue_state_text").innerHTML = translations[language].moving;
+              document.getElementById("your_queue_num_text").style.display = "none";
+              document.getElementById("You are in ranking X").style.display = "none";
+              document.getElementById("waitting_time_has").style.display = "none";
+              document.getElementById("Remaining time moving to").style.display = "";
+              // New: Store moving time
+              setDynamicValues(prev => ({
+                ...prev,
+                movingTime: moveing_time < 0 ? 0 : moveing_time,
+                ranking: null,
+              }));
+            } else {
+              document.getElementById("There are x minutes left to start charging").innerHTML = millis_to_time_String(time < 0 ? 0 : time);
+              queue_endtime = (params[2]);
+              // New: Store ranking and queue time
+              setDynamicValues(prev => ({
+                ...prev,
+                ranking: params[1],
+                queueTime: time < 0 ? 0 : time,
+                movingTime: null,
+              }));
+            }
+          }
+          if (user_State != InUse) {
+            console.log("user_State != InUse");
+            const ExistingUsing = document.getElementById("ExistingUsing");
+            ExistingUsing.style.display = "none";
+          } else {
+            const ExistingUsing = document.getElementById("ExistingUsing");
+            ExistingUsing.style.display = "";
+            console.log("InUse");
+            console.log(params);
+            charge_endtime = (params[1]);
+            document.getElementById("Remaining time").innerHTML = millis_to_time_String(charge_endtime - new Date(Date.now()).getTime());
+            // New: Store remaining charge time
+            setDynamicValues(prev => ({
+              ...prev,
+              remainingChargeTime: charge_endtime - new Date(Date.now()).getTime(),
+            }));
+          }
+          if (user_State != Finish) {
+            console.log("user_State != Finish");
+            const FinishCharging = document.getElementById("FinishCharging");
+            FinishCharging.style.display = "none";
+          } else {
+            const FinishCharging = document.getElementById("FinishCharging");
+            FinishCharging.style.display = "";
+            console.log("Finish");
+            cookie.remove("_id");
+            sessionStorage.setItem("finished", true);
+          }
+          if (user_State != not_this_user) {
+            console.log(not_this_user);
+            const NotYou = document.getElementById("NotYou");
+            NotYou.style.display = "none";
+          } else {
+            const NotYou = document.getElementById("NotYou");
+            NotYou.style.display = "";
+          }
+
+          document.getElementById("_id").innerHTML = cookie.load("_id") || "no _id";
+          document.getElementById("loading繼續").style.display = "none";
+          document.getElementById("after_cookie").style.display = "";
+        }).catch((error) => { console.error("fetchData error:", error) });
+    };
+
+    fetchData();
+    document.addEventListener("fetchData", fetchData);
+    //let countdown_loop = () => { console.warn("empty countdown_loop"); };
+    interval = setInterval(countdown_loop, 0);
+    clearInterval(interval);
+    let fetched = false;
+    countdown_loop = () => {
+      if (document.getElementById("SelectChargingTime").style.display != "none") return;
+      if (charge_endtime && charge_endtime > 0) {
+        const newTime = charge_endtime - new Date(Date.now()).getTime();
+        if (newTime <= 0) {
+          // redirectToNextPage()
+        }
+        if (document.getElementById("Remaining time")) {
+          // document.getElementById("Remaining time").innerHTML = millis_to_time_String(newTime < 0 ? 0 : newTime);
+          // New: Update stored remaining charge time
+          setDynamicValues(prev => ({
+            ...prev,
+            remainingChargeTime: newTime < 0 ? 0 : newTime,
+          }));
+        }
+      }
+      const newTime = queue_endtime - new Date(Date.now()).getTime();
+      if (document.getElementById("There are x minutes left to start charging")) {
+        if (newTime && newTime > 0)
+          // document.getElementById("There are x minutes left to start charging").innerHTML = millis_to_time_String(newTime);
+          // else document.getElementById("There are x minutes left to start charging").innerHTML = millis_to_time_String(0);
+          // New: Update stored queue or moving time
+          setDynamicValues(prev => ({
+            ...prev,
+            [prev.movingTime != null ? 'movingTime' : 'queueTime']: newTime < 0 ? 0 : newTime,
+          }));
+      }
+      if (document.getElementById("You need to wait x minutes")) {
+        if (newTime && newTime > 0)
+          // document.getElementById("You need to wait x minutes").innerHTML = millis_to_time_String(newTime);
+          // else document.getElementById("You need to wait x minutes").innerHTML = millis_to_time_String(0);
+          // New: Update stored queue time
+          setDynamicValues(prev => ({
+            ...prev,
+            queueTime: newTime < 0 ? 0 : newTime,
+          }));
+      }
+      if (newTime && newTime < 0 && cookie.load("_id")) {
+        if ((
+          (document.getElementById("SelectChargingTime")
+            && document.getElementById("SelectChargingTime").style.display == "none")
+          || (document.getElementById("confirmBtn")
+            && document.getElementById("confirmBtn").style.display == "none")
+        )
+          &&
+          document.getElementById("ExistingUsing_stop_btn")
+          && document.getElementById('ExistingUsing_stop_btn').style.display == ''
+          &&
+          document.getElementById("cancelbtn")
+          && document.getElementById("cancelbtn").style.display == ""
+        ) {
+          if (!fetched) {
+            console.log("fetchData");
+            fetchData();
+          }
+          fetched = true;
+        } else
+          console.log(
+            `don't fetchData
+            ${document.getElementById("SelectChargingTime")}
+            &&${document.getElementById("SelectChargingTime").style.display == "none"}
+            &&
+            ${document.getElementById("ExistingUsing_stop_btn")}
+            &&${document.getElementById('ExistingUsing_stop_btn').style.display == ''}
+            &&
+            ${document.getElementById("cancelbtn")}
+            &&${document.getElementById("cancelbtn").style.display == ""}
+              `
+          );
+      }
+      console.log("interval");
+      if (sessionStorage.getItem("finished") !== null) {
+        clearInterval(interval);
+        console.log("stop interval because sessionStorage finished");
+      }
+    };
+    interval = setInterval(countdown_loop, 1000);
+    document.getElementById("confirmText").style.display = "none";
+    document.getElementById("confirmButtons").style.display = "none";
+    document.getElementById("chargingStopped").style.display = "none";
+    document.getElementById("thankYouMsg").style.display = "none";
+    document.getElementById("chargingStopped").style.color = "white";
+    document.getElementById("thankYouMsg").style.color = "white";
+
+    updateTotalPrice();
+    after_useEffect();
+    return () => {
+      try { if (eventSource !== void 0) eventSource.close(); }
+      catch { };
+    };
+  }, []);
+
+  // New: useEffect to update dynamic text when language changes
+  useEffect(() => {
+    console.log("useEffect language dynamicValues",)
+    // Update document title
+    const carNum_base64 = window.location.pathname.substring(1);
+    document.title = translations[language].parkingSpace.replace('{carNum}', atob(carNum_base64));
+
+    // Update welcome screen
+    if (document.getElementById("There are x in front") && dynamicValues.queuePosition != null) {
+      document.getElementById("There are x in front").innerHTML = dynamicValues.queuePosition;
+    }
+    if (document.getElementById("You need to wait x minutes") && dynamicValues.queueTime != null) {
+      document.getElementById("You need to wait x minutes").innerHTML = millis_to_time_String(dynamicValues.queueTime);
+    }
+
+    // Update queuing screen
+    if (document.getElementById("InQueue_state_text")) {
+      document.getElementById("InQueue_state_text").innerHTML = dynamicValues.movingTime != null
+        ? translations[language].moving
+        : translations[language].queuing;
+    }
+    if (document.getElementById("your_queue_num_text")) {
+      document.getElementById("your_queue_num_text").innerHTML = translations[language].yourQueueNum;
+    }
+    if (document.getElementById("You are in ranking X") && dynamicValues.ranking != null) {
+      document.getElementById("You are in ranking X").innerHTML = dynamicValues.ranking;
+    }
+    if (document.getElementById("waitting_time_has")) {
+      document.getElementById("waitting_time_has").innerHTML = translations[language].timeToStartCharging;
+    }
+    if (document.getElementById("Remaining time moving to")) {
+      document.getElementById("Remaining time moving to").innerHTML = translations[language].movingToSpot;
+    }
+    if (document.getElementById("There are x minutes left to start charging")) {
+      const time = dynamicValues.movingTime != null ? dynamicValues.movingTime : dynamicValues.queueTime;
+      if (time != null) {
+        document.getElementById("There are x minutes left to start charging").innerHTML = millis_to_time_String(time);
+      }
+    }
+
+    // Update charging screen
+    if (document.getElementById("Remaining time") && dynamicValues.remainingChargeTime != null) {
+      document.getElementById("Remaining time").innerHTML = millis_to_time_String(dynamicValues.remainingChargeTime);
+    }
+
+    // Update total price
+    updateTotalPrice();
+
+  }, [language, dynamicValues]);
+
+  function goto(v) {
+    return (a) => {
+      console.log(a);
+      for (let i = 0; i < arguments.length; i++) {
+        v = arguments[i];
+        console.log(v);
+        const target = document.getElementById(v);
+        if (target != null) target.style.display = '';
+        else {
+          document.getElementById("react_def_app").style.display = '';
           return;
         }
-      } else {//charging_user not exisit
-        console.log("charging_user not exisit/-/-/-/-")
-        output = [FirstTime, void 0, void 0, carNum]
       }
-      console.log("checking selecting user/-/-/-/-")
-      // limit = 1
-      // sort = { "_id": -1 }
-      const selecting_cursor = collection.find(
-        {
-          // "start time": { "$exists": true },
-          // "charge duration": { $gt: 0 },
-          "Parking Space Num": +urlparams.get("Parking Space Num")   // key: value
-        }, { sort, limit }
-      )
-      const selecting_rows = await selecting_cursor.toArray()
-      console.log("selecting_rows", selecting_rows)
-      const selecting_user = selecting_rows[0]
-      if (
-        /**/selecting_user/**/ !== void 0
-        && selecting_user["Parking Space Num"] !== void 0
-        && selecting_user["charge duration"] === void 0
-        && selecting_user["start time"] === void 0
-        && selecting_user["_id"] != (urlparams.get("_id").replaceAll("\"", ""))
-      ) {// selecting user exists
-        console.log("selecting user exists/-/-/-/-")
-        console.log(`${selecting_user["_id"]}!=${(urlparams.get("_id").replaceAll("\"", ""))}`)
-        console.log(selecting_user["_id"] != (urlparams.get("_id").replaceAll("\"", "")))
-        res.send([not_this_user, void 0, void 0, carNum]);
-        console.log([not_this_user, void 0, void 0, carNum]);
-        return;
-      } else
-        console.log("vaild user/-/-/-/-");
-    }  //this user係db裏面找ga result 
-    // else if(this_user["charge duration"]===undefined){
-
-    // }
-    else if (this_user["start time"] === undefined) {     //透過呢個logic得知this_user係排緊隊
-      output = [InQueue, void 0, void 0, carNum];
-    }
-    else if ((new Date(this_user["start time"]).getTime() + (this_user["charge duration"] * 60 * 1000)) - new Date(Date.now()).getTime() < 0) {
-      //Finish
-      console.log(`(${new Date(this_user["start time"]).getTime()} + ${(this_user["charge duration"] * 60 * 1000)}) - ${new Date(Date.now()).getTime()}`);
-      console.log(`${(new Date(this_user["start time"]).getTime() + (this_user["charge duration"] * 60 * 1000))} - ${new Date(Date.now()).getTime()}`);
-      console.log((new Date(this_user["start time"]).getTime() + (this_user["charge duration"] * 60 * 1000)) - new Date(Date.now()).getTime());
-      res.send([Finish, void 0, void 0, carNum]);
-      console.log([Finish, void 0, void 0, carNum]);
-      return
-    }
-
-    else if (this_user["charge duration"] !== undefined) {
-      console.log(`${new Date(this_user["start time"]).getTime()} + ${(this_user["charge duration"] * 60 * 1000)}`)
-      console.log(new Date(this_user["start time"]).getTime() + (this_user["charge duration"] * 60 * 1000))
-      res.send([InUse, (new Date(this_user["start time"]).getTime() + (this_user["charge duration"] * 60 * 1000)), park.predicted_moved_time, carNum]);
-      console.log([InUse, (new Date(this_user["start time"]).getTime() + (this_user["charge duration"] * 60 * 1000)), park.predicted_moved_time, carNum]);
-      return
-    } else output = [FirstTime, void 0, void 0, carNum]
-    if (output[0] == FirstTime || output[0] == InQueue) {
-
-
-
-      const queue_response_cursor = collection.find(
-        {
-          "charge duration": { "$exists": true },
-          "start time": null
-        }, {
-        "$sort": { "_id": 1 }   //sort by _id; 1==>順序
+      let crr = a.currentTarget;
+      console.log(crr);
+      console.log(crr.parentNode);
+      let count = 0;
+      while (crr.tagName.indexOf("TOP") < 0) {
+        if (crr.parentNode != null)
+          crr = crr.parentNode;
+        else break;
+        count++;
       }
-      )
-      const queue_response_data = await queue_response_cursor.toArray();
-      console.log("queue_response", queue_response_data);
-      const limit = 1
-      let sort = { "start time": -1 }  //sort by _id; -1==>倒序
-      const charging_cursor = collection.find(
-        {
-          "start time": { "$exists": true }
-          , "charge duration": { $gt: 0 }
-        }, { sort, limit }
-      )
-      const charging_rows = await charging_cursor.toArray()
-      //console.log("charging_rows",charging_rows);
-      const charging_user = charging_rows[0]  //get charging user
-      console.log("charging_user", charging_rows);
-
-      let charge_finish_time;
-      if (charging_user === undefined) charge_finish_time = 0
-      else charge_finish_time = (
-        (new Date(charging_user["start time"]).getTime() +   //Date() ==>start time change to date formort ; .getTime ==>date format change to millis second ; string無辦法直接轉millis，所以要轉2次
-          charging_user["charge duration"] * 60 * 1000) // -
-        // new Date(Date.now()).getTime()
-      )
-      let charger_free_time = charge_finish_time;
-      let queueNum = 1;
-      for (let i = 0; i < queue_response_data.length; i += 1) {
-        const queue_user = queue_response_data[i];
-        if (queue_user["Parking Space Num"] == urlparams.get("Parking Space Num")) break;
-        charger_free_time += queue_user["charge duration"] * 60 * 1000   // +=係累計咁解
-        queueNum += 1;
+      console.log(count);
+      console.log(crr);
+      crr.style.display = "none";
+      // New: Hide language button when "Continue" is clicked and language is Chinese
+      if (crr.id === "welcome" && language === 'zh') {
+        setShowLanguageButton(false);
       }
-      console.log("charge_finish_time", charge_finish_time);
-      // console.log([output[0], queueNum, charger_free_time, output[3]]);
-      res.send([output[0], queueNum, charger_free_time, output[3], park.predicted_moved_time]);
-      console.log([output[0], queueNum, charger_free_time, output[3], park.predicted_moved_time]);
-      // console.log('[output[0], queueNum, charger_free_time, output[3]]');
-      return
-    }
-
-    res.send(output);
-    // return
-  } catch (error) {
-    console.error('查詢錯誤:', error);
-    res.status(500).json({ error: '查詢失敗', details: error.message });
+    };
   }
-});
 
-// 添加新記錄的路由（用於首次使用）
-app.post("/register", async (req, resp) => {
-  const log = true;
-  console.log('post"/register"')
-  if (log) console.log('app.post("/register")' + req.url);
-  if (log) console.log('app.post("/register")' + decodeURI(req.url));
-  // if(log)console.log("req:",req);
-  var params = new URLSearchParams(req.url.split("?")[1]);
-  if (log) console.log("params:", params);
-  let docsInserted;
-  try {
-    let objectToInsert = {};
-    params.forEach(function (part, index, theArray) {
-      if (log) console.log(index + ":" + part);
-      objectToInsert[index] = eval(part);
-      if (log) console.log(index + ":" + objectToInsert[index]);
-    });
-    console.log("objectToInsert", objectToInsert)
-    if (objectToInsert["Parking Space Num"] === undefined
-      || objectToInsert["Parking Space Num"] < 1
-      || objectToInsert["Parking Space Num"] > 11
-    ) return;
-    const result = await collection.insertOne(objectToInsert);
-    if (log) console.log("result:", result);
-    docsInserted = result.insertedId;
-    if (log) console.log("docsInserted:" + docsInserted, typeof docsInserted);
-    // resp.send(docsInserted);
-    const filter = { "_id": new ObjectId(docsInserted) }
-    objectToInsert = { "Verification code": `${docsInserted}`.substring(0, 10) }
-    console.log("filter", filter)
-    console.log("objectToInsert", objectToInsert)
-    const update_result = await collection.updateOne(
-      filter,
+  const updateTotalPrice = () => {
+    const totalPrice = document.getElementById('total-price');
+    const chargingTimeSelect = document.getElementById('charging-time');
+    const chargingTime = parseInt(chargingTimeSelect.innerHTML);
+    const price = chargingTime / 15 * 5;
+    console.log(language);
+    totalPrice.textContent = translations[language].totalPrice
+      .replace('{chargingTime}', chargingTime)
+      .replace('{price}', price);
+  };
+
+  function increasetimeBtn(e) {
+    console.log("add_time");
+    console.log(display_time);
+    if (display_time < maxlim)
+      display_time += 15;
+    console.log(display_time);
+    const chargingTimeSelect = document.getElementById('charging-time');
+    console.log(chargingTimeSelect);
+    chargingTimeSelect.innerHTML = display_time;
+    updateTotalPrice();
+  }
+
+  function decreasetimeBtn(e) {
+    console.log("sub_time");
+    if (display_time > minlim)
+      display_time -= 15;
+    const chargingTimeSelect = document.getElementById('charging-time');
+    chargingTimeSelect.innerHTML = display_time;
+    updateTotalPrice();
+  }
+
+  async function confirmPayment() {
+    document.getElementById("confirmBtn").style.display = "none";
+    const carNum_base64 = window.location.pathname.substring(1);
+    const expires = new Date(Date.now() + 1000 * 60 * 60 * 24 * 3);
+    console.log(expires);
+    console.log(window.location.host);
+    cookie.save(
+      '_id',
+      cookie.load("_id"),
       {
-        "$set": objectToInsert
-      },
-      { upsert: false },
-    );
-    console.log("update_result:", update_result)
-    resp.send(docsInserted);
-
-    reload_admin()
-    // if (timer._destroyed) {
-    //   queue_shift();
-    // }
-  }
-  catch (err) {
-    if (log) console.log("err:" + err);
-    resp.status(500).send(err);
-  }
-
-
-  setTimeout(async () => {
-    console.log("Timeout");
-    for (let i = 0; i < clients.length; i++) {
-      console.log(clients[i]["_id"], docsInserted, clients[i]["_id"] == docsInserted)
-      if (clients[i]["_id"] == docsInserted) return;
-    }
-    const limit = 1
-    let sort = { "start time": -1 }
-    const crr_cursor = collection.find(
+        path: '/',
+        expires,
+      });
+    const response = await backend.post("/selected", null,
       {
-        "_id": new ObjectId(_id),
-      }, { sort, limit }
-    )
-    const crr_rows = await crr_cursor.toArray()
-    console.log("close_rows", crr_rows)
-    const crr_user = crr_rows[0]
-    if (
-      /**/crr_user/**/ !== void 0
-      && crr_user["Parking Space Num"] !== void 0
-      && crr_user["charge duration"] === void 0
-      && crr_user["start time"] === void 0
-    ) {
-      console.log(async_id_symbolm, "deletedeletedeletedeletedeletedeletedeletedeletedeletedeletedeletedeletedeletedelete")
-      reload_admin(_id);
-      collection.deleteOne({ "_id": new ObjectId(_id) });
-    }
-  }, 10000);
-});
-
-
-
-
-
-app.post("/Verification", async (req, resp) => {
-  const log = true;
-  console.log('post"/Verification"')
-  if (log) console.log('app.post("/Verification")' + req.url);
-  if (log) console.log('app.post("/Verification")' + decodeURI(req.url));
-  // if(log)console.log("req:",req);
-  var params = new URLSearchParams(req.url.split("?")[1]);
-  if (log) console.log("params:", params);
-  let old_user_id;
-  // try {
-  const Verification_code = params.get("Verification code")
-  console.log("Verification_code", Verification_code)
-  const limit = 1
-  var sort = { "start time": -1 }// sort by _id; -1==>倒序
-  const this_cursor = collection.find(
-    {
-      "Verification code": Verification_code
-    }, { sort, limit }
-  )
-  const this_rows = await this_cursor.toArray()
-  if (log) console.log("this_rows", this_rows);
-  const this_user = this_rows[0]  //get charging user
-  old_user_id = this_user ? this_user["_id"] : void 0;
-  if (log) console.log("old_user_id:" + old_user_id);
-  resp.send(old_user_id);
-  reload_admin()
-  // if (timer._destroyed) {
-  //   queue_shift();
-  // }
-  // }
-  // catch {
-  //   err => {
-  //     if (log) console.log("err:" + err);
-  //     resp.status(500).send(err);
-  //   }
-  // }
-
-});
-
-
-
-
-app.post("/selected", async (req, resp) => {
-  const log = true;
-  console.log('post"/selected"')
-  if (log) console.log('app.post("/selected")' + req.url);
-  if (log) console.log('app.post("/selected")' + decodeURI(req.url));
-  // if(log)console.log("req:",req);
-  var params = new URLSearchParams(req.url.split("?")[1]);
-  if (log) console.log("params:", params);
-  try {
-    let filter = {};
-    let objectToInsert = {};
-    params.forEach(function (part, index, theArray) {
-      if (log) console.log(index + ":" + part);
-      if (index != "_id")
-        objectToInsert[index] = eval(part);
-      else
-        filter[index] = new ObjectId(part);
-      if (log) console.log(index + ":" + objectToInsert[index]);
-    });
-    // const result = await collection.insertOne(objectToInsert);
-    if (Object.keys(filter).length <= 0) return;
-    const result = await collection.updateOne(
-      filter,
-      {
-        "$set": objectToInsert
-      },
-      { upsert: false },
-    );
-    if (log) console.log("result:", result);
-    resp.send(result);
-    if (park.timer._destroyed) {
-      console.log("this client is selected and confirmed, call this client to fetchData")
-      send_to_client("message", "fetchData");
-      queue_shift();
-    } else {
-      console.log("this client is selected and confirmed, call this client to fetchData")
-      send_to_client("message", "fetchData");
-    }
-  }
-  catch (err) {
-    if (log) console.log("err:" + err);
-    resp.status(500).send(err);
-  }
-
-  reload_admin();
-});
-
-
-
-
-
-
-//cancal記錄的路由
-app.post("/cancal", async (req, resp) => {
-  const log = false;
-  console.log('post"/cancal');
-  if (log) console.log('app.post("/cancal")' + req.url);
-  if (log) console.log('app.post("/cancal")' + decodeURI(req.url));
-  var params = new URLSearchParams(req.url.split("?")[1]);
-  if (log) console.log("params:", params);
-  let filter = {};
-  params.forEach(function (part, index, theArray) {
-    if (log) console.log(index + ":" + part);
-    if (index == "_id") filter[index] = new ObjectId(part);
-    else filter[index] = eval(part);
-    if (log) console.log(index + ":" + filter[index]);
-  });
-  if (log) console.log("filter", filter);
-  let new_charge_duration = 0;
-  let new_start_time;
-  const cursor = collection.find(filter);
-  const rows = await cursor.toArray();
-  if (log) console.log("rows", rows);
-  if (!(rows[0]["start time"] === undefined)) {
-    const charged_time = (new Date(Date.now()).getTime() - new Date(rows[0]["start time"]).getTime()) / 1000 / 60;
-    if (log) console.log("charged_time", charged_time);
-    if (charged_time > rows[0]["charge duration"]) {
-      return;
-    }
-    new_charge_duration = Math.floor(charged_time);
-    new_start_time = rows[0]["start time"];
-  } else {
-    const now = new Date(Date.now());
-    if (log) console.log("now", now);
-    new_start_time = now;
-  }
-  const result = await collection.updateOne(
-    filter,
-    {
-      "$set": {
-        "start time": new_start_time,
-        "charge duration": new_charge_duration,
-      }
-    },
-    { upsert: false },
-  );
-  if (log) console.log("result", result);
-  resp.send(result);
-  queue_shift();
-});
-
-// 開始充電的路由（更新 start time）
-async function queue_shift(exception = void 0) {
-  console.log("queue_shiftqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq");
-  const log = true;
-  clearTimeout(park.timer);
-  var queue_Interval = null;
-  const limit = 1;
-  var sort = { "start time": -1 }  //sort by _id; -1==>倒序
-  const charging_cursor = collection.find(
-    {
-      "start time": { "$exists": true }
-      , "charge duration": { $gt: 0 }
-    }, { sort, limit }
-  );
-  const charging_rows = await charging_cursor.toArray();
-  if (log) console.log("charging_rows", charging_rows);
-  const charging_user = charging_rows[0];  //get charging user
-  var user_who_need_to_charge = { "Parking Space Num": 0, "charge duration": null }
-  let remaining_time = -1;   //配合196 logic
-  let there_are_queuing = false;
-  if (!(charging_user === undefined)) {
-    remaining_time = charging_user["start time"].getTime() + charging_user["charge duration"] * 1000 * 60 - (Date.now());
-    // if(log)console.log("remaining_time",remaining_time);
-    // if(log)console.log(charging_user["start time"].getTime())
-    // if(log)console.log(charging_user["charge duration"])
-    // if(log)console.log("Date.now()",Date.now())
-    // if(log)console.log("user_who_need_to_charge",user_who_need_to_charge);
-  }
-  if (remaining_time >= 0) {
-    queue_Interval = remaining_time;
-    user_who_need_to_charge = charging_user;
-  }
-  else {
-    const queue_cursor = collection.find(  //collection.find 可以當係select咁解
-      {
-        "charge duration": { "$exists": true },
-        "start time": null
-      }, {
-      "$sort": { "_id": 1 }   //sort by _id; 1==>順序
-    }
-    )
-    const queue_rows = await queue_cursor.toArray();  //.toArray相等於Ctrl C 然後Ctrl V落去queue_rows度 
-    if (log) console.log("queue_rows", queue_rows)       //queue_rows係排緊隊ga人ga訊息
-    if (queue_rows[0] != undefined) {
-      there_are_queuing = true
-      user_who_need_to_charge = queue_rows[0]
-      queue_Interval = user_who_need_to_charge['charge duration'] * 1000 * 60
-    }
-  }
-  if (log) console.log("queue_Interval", millis_to_time_String(queue_Interval))
-  //if(log)console.log("user_who_need_to_charge",user_who_need_to_charge);
-  let reloaded_client = 0;
-  let retry_reload_interval = setInterval(() => { }, 10)
-  clearInterval(retry_reload_interval);
-  let retry_reload = () => {
-    console.log("queue_shift before call_charger_moove_to, call all client fetchData")
-    reloaded_client = send_to_client("message", "fetchData");
-    if (Date.now() - last_queue_shift > 1)
-      clearInterval(retry_reload_interval);
-  }
-  last_queue_shift = Date.now()
-  retry_reload_interval = setInterval(retry_reload, 500)
-  const status = await call_charger_move_to(user_who_need_to_charge["Parking Space Num"], user_who_need_to_charge["_id"])  // TODO control fung's machine
-  console.log("process returned to queue_shift and user_who_need_to_charge.charge duration:", user_who_need_to_charge["charge duration"]);
-  if (there_are_queuing || user_who_need_to_charge["charge duration"] !== null) {//!---------------------------------------
-    let skip = false;
-    if (status == Already && (!charging_user || user_who_need_to_charge["_id"] == charging_user["_id"])) skip = true;
-    if (!skip) {
-      const now = new Date(Date.now());
-      const result = await collection.updateOne(
-        user_who_need_to_charge,
-        {
-          "$set": {
-            "start time": now,
-          }
-        },
-        { upsert: false },
-      );
-      /*if(log)*/console.log("result", result);
-      console.log("user_who_need_to_charge", user_who_need_to_charge)
-    }
-    // reload_all_client(_id=String(user_who_need_to_charge["_id"]))
-    console.log("call user_who_need_to_charge fetchData")
-    send_to_client("message", "fetchData", String(user_who_need_to_charge["_id"]))
-    park.timer = setTimeout(queue_shift, queue_Interval)
-    if (log) console.log("next queue_shift" + queue_Interval)
-  }
-}
-let charger_moving_intervals = [setInterval(() => { }, 10)]
-async function call_charger_move_to(spot, _id = void 0) {//added ,_id = void 0
-  console.log(`Moving to spot ${spot}`);
-  let command = "calibrate";
-  if (spot != 0) command = `move?spot=${spot}`;
-  // console.log(`http://${charger_IPV4}/control/${command}`);
-
-  // const result = await fetch(`http://${charger_IPV4}/control/${command}`);
-  // console.log("result",result);
-  let index_loc_msg_vaild_time = Date.now();
-  send_to_index_loc("call_charger_move_to", spot,1240);
-  clearIntervals(charger_moving_intervals);
-  // clearTimeout(charger_moving_interval);
-  // let need_wait=0;
-  // if(spot==0)need_wait=0;//need_wait = (32 * 1000);
-  // else need_wait = parseInt(await(await(await fetch(`http://${charger_IPV4}/how_long`)).blob()).text());
-  // else 
-  let start = Date.now();
-  await new Promise((resolve) => {
-    charger_moving_intervals.push(setInterval(async () => {
-      const completed = index_loc_msg_vaild_time < park.index_loc_msg_rev_time;
-      if (completed) {
-        if (park.charger_is_moving_to_spot == spot) {
-          send_park_is_available("call_charger_move_to");
-          clearIntervals(charger_moving_intervals);
-          resolve();                                                  // 在完成後解析 Promise
-        } else {
-          console.log(`
-            park.charger_is_moving_to_spot==spot
-            ${park.charger_is_moving_to_spot}==${spot}
-            ${typeof park.charger_is_moving_to_spot}==${typeof spot}
-            `);
-          index_loc_msg_vaild_time = Date.now();
-          send_to_index_loc("call_charger_move_to", spot,1263);
+        params: {
+          '_id': cookie.load('_id'),
+          'Parking Space Num': atob(carNum_base64),
+          'charge duration': document.getElementById("charging-time").innerHTML,
         }
-      } else if (Date.now() - start > 17000) {
-        start = Date.now();
-        send_to_index_loc("call_charger_move_to", spot,1267);
-      } else {
-        console.log({ "completed": { "index_loc_msg_rev_time": park.index_loc_msg_rev_time } })
-      };
-    }, 2000));
-  });
-  console.log("need_wait", park.need_wait);
-  console.log("millis_to_time_String(need_wait)", millis_to_time_String(park.need_wait));
-  park.predicted_moved_time = Date.now() + (isNaN(park.need_wait) ? 0 : park.need_wait);
-  console.log("Date.now()", Date.now());
-  console.log("millis_to_time_String(Date.now())", millis_to_time_String(Date.now()));
-  console.log("predicted_moved_time", park.predicted_moved_time);
-  console.log("millis_to_time_String(predicted_moved_time)", millis_to_time_String(park.predicted_moved_time));
-  // last_queue_shift=Date.now();
-  // if (_id !== void 0) send_to_client("message", "fetchData", _id)//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  if (park.need_wait == 0) return Already;
-  console.log("sleeping");
-  // await sleep(need_wait);
-  console.log("sleeped-----------------------------------------------------------------------------------------------------------------------");
-  const isComplete_list = [];
-  let fetch_count = 0;
-  let isComplete_start = Date.now();
-  const check_charger_complete_move = async () => {
-    // console.log(`Checking if charger has completed move: http://${charger_IPV4}/is_charger_complete_move`);
-    fetch_count++;
-    // const is_charger_complete_move = await fetch(`http://${charger_IPV4}/is_charger_complete_move`);
-    // if(charger_moving_interval.destroyed)return;
-    // console.log("is_charger_complete_move.status",is_charger_complete_move.status);
-    // isComplete_list.push(await (await is_charger_complete_move.blob()).text() === "1");
-    // const isComplete = isComplete_list.some(a=>a);
-    const isComplete = (Date.now() - park.predicted_moved_time > 0);
-    console.log([isComplete_list.length, isComplete, fetch_count]);
-    if (isComplete) {
-      clearIntervals(charger_moving_intervals);
-      console.log(`Charger has completed the move to spot ${spot}`);
-      return true; // 返回完成狀態
-    }
-    return false; // 返回未完成狀態
+      }
+    );
+    console.log(response);
   }
 
-  return new Promise((resolve) => {
-    charger_moving_intervals.push(setInterval(async () => {
-      const completed = await check_charger_complete_move();
-      if (completed) {
-        resolve(); // 在完成後解析 Promise
-      } else if (park.predicted_moved_time < Date.now())
-        park.predicted_moved_time = Date.now() + (15 * 1000);
-    }, 2000));
-  });
+  function redirectToNextPage() {
+    console.log(`/${btoa(atob(window.location.pathname.substring(1)))}`);
+    console.log(window.location.pathname.substring(1));
+    window.location.href = `/${btoa(atob(window.location.pathname.substring(1)))}`;
+  }
 
-  // return new Promise(async(resolve) => {
-  //   let completed=false;
-  //   while(!completed){
-  //     completed = await check_charger_complete_move();
-  //     if (completed) {
-  //       resolve(); // 在完成後解析 Promise
-  //     }else if(predicted_moved_time<Date.now())
-  //       predicted_moved_time = Date.now() + (15 * 1000);
-  //   }
-  // });
-}
-// 啟動服務器
-async function startServer() {
-  await connectToDatabase();
-  app.listen(port, () => {
-    console.log(`後端服務器運行在 http://localhost:${port}`);
-  });
-  queue_shift();
+  function showMessage(isConfirmed) {
+    return async () => {
+      const cancel_show = document.getElementById("cancel_show");
+      const infoRow = document.getElementById("infoRow");
+      const InQueue_state_text = document.getElementById("InQueue_state_text");
+      if (isConfirmed) {
+        infoRow.style.display = "none";
+        InQueue_state_text.style.display = "none";
+        const cancal_response = await backend.post("/cancal", null, {
+          params: {
+            "_id": cookie.load('_id')
+          }
+        });
+        console.log(cancal_response);
+        cookie.remove('_id');
+        sessionStorage.setItem("finished", true);
+        document.getElementById('message').textContent = translations[language].unplugMessage;
+      }
+      else {
+        const cancelbtn = document.getElementById("cancelbtn");
+        const samplebtn = document.getElementById("samplebtn");
+        cancelbtn.style = samplebtn.style;
+      }
+      cancel_show.style.display = "none";
+      document.getElementById('message').style.display = '';
+    };
+  }
+
+  function cancel() {
+    return () => {
+      const cancel_show = document.getElementById("cancel_show");
+      const cancelbtn = document.getElementById("cancelbtn");
+      cancel_show.style.display = "";
+      cancelbtn.style.display = "none";
+    };
+  }
+
+  function confirmStop() {
+    return () => {
+      document.getElementById('confirmText').style.display = '';
+      document.getElementById('confirmButtons').style.display = '';
+      document.getElementById('ExistingUsing_stop_btn').style.display = 'none';
+      document.getElementById('chargingTime').style.display = 'none';
+      // New: Update confirm text dynamically
+      document.getElementById('confirmText').textContent = translations[language].confirmStop;
+    };
+  }
+
+  function stopCharging() {
+    return async () => {
+      document.getElementById('confirmText').style.display = 'none';
+      document.getElementById('confirmButtons').style.display = 'none';
+      const cancal_response = await backend.post("/cancal", null, {
+        params: {
+          "_id": cookie.load('_id')
+        }
+      });
+      console.log(cancal_response);
+      cookie.remove("_id");
+      sessionStorage.setItem("finished", true);
+      document.getElementById('chargingStopped').style.display = '';
+      document.getElementById('thankYouMsg').style.display = '';
+      // New: Update dynamic text
+      document.getElementById('chargingStopped').textContent = translations[language].chargingStopped;
+      document.getElementById('thankYouMsg').textContent = translations[language].thankYou;
+    };
+  }
+
+  function cancelStop() {
+    return () => {
+      document.getElementById('confirmText').style.display = 'none';
+      document.getElementById('confirmButtons').style.display = 'none';
+      document.getElementById('ExistingUsing_stop_btn').style.display = '';
+      document.getElementById('chargingTime').style.display = '';
+    };
+  }
+
+  const [showPassword, setShowPassword] = useState(false);
+  const I_have_Verification_Code_click = () => {
+    const Verification_Code_form = document.getElementById("Verification_Code_form");
+    Verification_Code_form.style.display = "";
+
+  }
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+  async function sendVerificatioCode() {
+    const Verification = document.getElementById("Verification");
+    console.log(Verification.validity)
+    if (Verification.validity.valid) {
+      const Verification_Code_form = document.getElementById("Verification_Code_form");
+      Verification_Code_form.style.display = "none";
+      const response = await backend.post("/Verification", null,
+        {
+          params: {
+            'Verification code': Verification.value,
+          }
+        }
+      );
+      console.log(response);
+      if (response.data.length == 24) {
+        const expires = new Date(Date.now() + 1000 * 60 * 60 * 24 * 3);
+        console.log(expires);
+        console.log(window.location.host);
+        cookie.save(
+          '_id',
+          response.data,
+          {
+            path: '/',
+            expires,
+          });
+        console.log(cookie.load("_id"));
+        const fetchDataEvent = new Event('fetchData', {
+          bubbles: true, // Allow the event to bubble up the DOM tree
+          cancelable: true // Allow the event to be canceled
+        });
+        document.dispatchEvent(fetchDataEvent);
+      } else {
+        Verification_Code_form.style.display = "";
+        Verification.style.background = "#f00";
+        setTimeout(() => Verification.style.background = "", 100)
+      }
+    } else {
+      Verification.style.background = "#f00";
+      setTimeout(() => Verification.style.background = "", 100)
+    }
+    // backend.get("/Verification").
+  }
+  return (
+    <div className="App">
+      <header className="App-header">
+        <div style={{ position: 'absolute', top: '10px', right: '10px', display: showLanguageButton ? 'block' : 'none' }}>
+          {/* <button onClick={toggleLanguage}>
+            {language === 'zh' ? 'Switch to English' : '切換到中文'}
+          </button> */}
+        </div>
+        <p id="_id" style={{ display: "" }}>loading</p>
+        <div-top id="react_def_app" style={{ display: "none" }}>
+          <img src={logo} className="App-logo" alt="logo" />
+          <p>
+            Edit <code>src/App.js</code> and save to reload.
+          </p>
+          <a
+            className="App-link"
+            href="https://reactjs.org"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Learn React
+          </a>
+        </div-top>
+        <div-top id="welcome" style={{ display: "none" }}>
+          <h1>{translations[language].welcome}</h1>
+          <div class="info">{translations[language].parkingSpace.replace('{carNum}', carNum)}</div>
+          <div>
+            <table class="center">
+              <tbody>
+                <tr>
+                  <td>{translations[language].thereAreXInFront}</td>
+                  <td><p id="There are x in front">X</p></td>
+                  <td>{translations[language].people}</td>
+                  <td style={{ padding: 10 + "px" }}></td>
+                  <td>{translations[language].youNeedToWait}</td>
+                  <td><p id="You need to wait x minutes">X</p></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div>
+            <button id="after_cookie" onClick={goto("SelectChargingTime")} style={{ display: "none" }}>
+              {translations[language].continue}
+            </button>
+            <div id="loading繼續">
+              <ClipLoader
+                color="#ff00ba"
+                loading={true}
+                cssOverride={override}
+                size={64}
+                aria-label="Loading Spinner"
+                data-testid="loader"
+              />
+            </div>
+          </div>
+        </div-top>
+        <div-top id="SelectChargingTime" style={{ display: "none" }}>
+          <h1>{translations[language].cheapestIndoorParking}</h1>
+          <div id="parking-spots">
+            <div class="parking-spot" data-spot="X">{translations[language].parkingSpace.replace('{carNum}', carNum)}</div>
+          </div>
+          <div id="charging-options">
+            <table class="center">
+              <tbody>
+                <tr>
+                  <td>{translations[language].chargingTime}</td>
+                  <td><p id="charging-time">15</p></td>
+                  <td>{translations[language].minutes}</td>
+                </tr>
+              </tbody>
+            </table>
+            <button style={{ marginRight: 50 + 'px' }} class="sym" onClick={decreasetimeBtn}>-</button>
+            <button style={{ marginLeft: 50 + 'px' }} class="sym" onClick={increasetimeBtn}>+</button>
+            <p></p>
+            <p id="total-price"></p>
+            <button id="confirmBtn" onClick={confirmPayment}>{translations[language].confirm}</button>
+          </div>
+        </div-top>
+        <div-top id="Queuing" style={{ display: "none" }}>
+          <h1>{translations[language].cheapestIndoorParking}</h1>
+          <div class="info">{translations[language].parkingSpace.replace('{carNum}', carNum)}</div>
+          <table class="center">
+            <tr>
+              <td id="InQueue_state_text" colspan="6">{translations[language].queuing}</td>
+            </tr>
+            <tr id="infoRow">
+              <td id="your_queue_num_text">{translations[language].yourQueueNum}</td>
+              <td><p id="You are in ranking X">X</p></td>
+              <td style={{ padding: 10 + "px" }}></td>
+              <td id="waitting_time_has">{translations[language].timeToStartCharging}</td>
+              <td id="Remaining time moving to" style={{ display: "none" }}>{translations[language].movingToSpot}</td>
+              <td><p id="There are x minutes left to start charging">X</p></td>
+            </tr>
+          </table>
+          <button id="cancelbtn" onClick={cancel()}>{translations[language].cancel}</button>
+          <div id="cancel_show" style={{ display: "none" }}>
+            <p>{translations[language].confirmCancel}</p>
+            <button onClick={showMessage(true)}>{translations[language].yes}</button>
+            <button onClick={showMessage(false)} id="samplebtn">{translations[language].no}</button>
+          </div>
+          <p id="message" style={{ display: "none" }}></p>
+        </div-top>
+        <div-top id="ExistingUsing" style={{ display: "none" }}>
+          <h1>{translations[language].cheapestIndoorParking}</h1>
+          <div class="info">{translations[language].parkingSpace.replace('{carNum}', carNum)}</div>
+          <table id="chargingTime" class="center">
+            <tr>
+              <td colspan="2">{translations[language].charging}</td>
+            </tr>
+            <tr>
+              <td>{translations[language].remainingTime}</td>
+              <td><p id="Remaining time">X</p></td>
+            </tr>
+          </table>
+          <button id="ExistingUsing_stop_btn" onClick={confirmStop()} class="btn">{translations[language].stop}</button>
+          <p id="confirmText" style={{ display: "none" }}>{translations[language].confirmStop}</p>
+          <div id="confirmButtons" style={{ display: "none" }}>
+            <button class="yesBtn" onClick={stopCharging()}>{translations[language].yes}</button>
+            <button class="noBtn" onClick={cancelStop()}>{translations[language].no}</button>
+          </div>
+          <p id="chargingStopped" style={{ display: "none" }}>{translations[language].chargingStopped}</p>
+          <p id="thankYouMsg" style={{ display: "none" }}>{translations[language].thankYou}</p>
+        </div-top>
+        <div-top id="FinishCharging" style={{ display: "none" }}>
+          <h1>{translations[language].cheapestIndoorParking}</h1>
+          <div class="info">{translations[language].parkingSpace.replace('{carNum}', carNum)}</div>
+          <p>{translations[language].chargingFinished}</p>
+          <p>{translations[language].thankYou}</p>
+        </div-top>
+        <div-top id="NotYou" style={{ display: "none" }}>
+          <h1>{translations[language].cheapestIndoorParking}</h1>
+          <div class="info">{translations[language].parkingSpace.replace('{carNum}', carNum)}</div>
+          <button id="I_have_Verification_Code" onClick={I_have_Verification_Code_click}>{translations[language].I_have_Verification_Code}</button>
+          <div id="Verification_Code_form" style={{ display: "none" }}>
+            <div >
+              <input id="Verification" maxlength="200" type={showPassword ? 'text' : 'password'} name="code" required="required" class="form-control input-lg" pattern="^(?=.*[a-fA-F])(?=.*[0-9])[a-fA-F0-9]{10}$|^[a-fA-F]{10}$|^[0-9]{10}$" title="Wrong Code" placeholder="Verification Code" />
+              <FontAwesomeIcon
+                icon={showPassword ? faEyeSlash : faEye}
+                onClick={togglePasswordVisibility}
+                style={{ cursor: 'pointer' }}
+              />
+            </div>
+            <input type="submit" name="submit" onClick={sendVerificatioCode} />
+          </div>
+          <p>{translations[language].notYourSpot}</p>
+        </div-top>
+        <dialog id="pack_not_available_dialog" onClose={ondialogclose}>
+          <div style={{ position: 'absolute', top: '10px', right: '10px', display: showLanguageButton ? 'block' : 'none' }}>
+            {/* <button onClick={toggleLanguage}>
+              {language === 'zh' ? 'Switch to English' : '切換到中文'}
+            </button> */}
+          </div>
+          <h1>{translations[language].dialog_pack_not_available}</h1>
+          <ClipLoader
+            color="#ff00ba"
+            loading={true}
+            cssOverride={override}
+            size={64}
+            aria-label="Loading Spinner"
+            data-testid="loader"
+          />
+        </dialog>
+        <dialog id="link_not_believable_dialog" onClose={ondialogclose} style={{ width: "100vw", height: "100vh" }}>
+          <div style={{ position: 'absolute', top: '10px', right: '10px', display: showLanguageButton ? 'block' : 'none' }}>
+            {/* <button onClick={toggleLanguage}>
+              {language === 'zh' ? 'Switch to English' : '切換到中文'}
+            </button> */}
+          </div>
+          <h1>{translations[language].please_rescan_the_QR_code}</h1>
+          <div id="qrresult"></div>
+          {Qrscanner}
+        </dialog>
+      </header>
+      {/* {Errorlog}/ */}
+    </div>
+  );
 }
 
-startServer();
+export default App;
