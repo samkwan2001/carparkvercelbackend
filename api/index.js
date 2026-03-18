@@ -1138,10 +1138,10 @@ app.post("/cancal", async (req, resp) => {
   resp.send(result);
   queue_shift();
 });
-
+let queue_shift_run_count=0;
 // 開始充電的路由（更新 start time）
 async function queue_shift(exception = void 0) {
-  console.log("queue_shiftqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq");
+  console.log("queue_shiftqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",queue_shift_run_count);
   const log = true;
   clearTimeout(park.timer);
   var queue_Interval = null;
@@ -1183,9 +1183,9 @@ async function queue_shift(exception = void 0) {
     const queue_rows = await queue_cursor.toArray();  //.toArray相等於Ctrl C 然後Ctrl V落去queue_rows度 
     if (log) console.log("queue_rows", queue_rows)       //queue_rows係排緊隊ga人ga訊息
     if (queue_rows[0] != undefined) {
-      there_are_queuing = true
-      user_who_need_to_charge = queue_rows[0]
-      queue_Interval = user_who_need_to_charge['charge duration'] * 1000 * 60
+      there_are_queuing = true;
+      user_who_need_to_charge = queue_rows[0];
+      queue_Interval = user_who_need_to_charge['charge duration'] * 1000 * 60;
     }
   }
   if (log) console.log("queue_Interval", millis_to_time_String(queue_Interval))
@@ -1201,7 +1201,7 @@ async function queue_shift(exception = void 0) {
   }
   last_queue_shift = Date.now()
   retry_reload_interval = setInterval(retry_reload, 500)
-  const status = await call_charger_move_to(user_who_need_to_charge["Parking Space Num"], user_who_need_to_charge["_id"])  // TODO control fung's machine
+  const status = await call_charger_move_to(user_who_need_to_charge["Parking Space Num"], user_who_need_to_charge["_id"],queue_shift_run_count)  // TODO control fung's machine
   console.log("process returned to queue_shift and user_who_need_to_charge.charge duration:", user_who_need_to_charge["charge duration"]);
   if (there_are_queuing || user_who_need_to_charge["charge duration"] !== null) {//!---------------------------------------
     let skip = false;
@@ -1228,7 +1228,7 @@ async function queue_shift(exception = void 0) {
   }
 }
 let charger_moving_intervals = [setInterval(() => { }, 10)]
-async function call_charger_move_to(spot, _id = void 0) {//added ,_id = void 0
+async function call_charger_move_to(spot, _id = void 0,func_count) {//added ,_id = void 0
   console.log(`Moving to spot ${spot}`);
   let command = "calibrate";
   if (spot != 0) command = `move?spot=${spot}`;
@@ -1298,7 +1298,7 @@ async function call_charger_move_to(spot, _id = void 0) {//added ,_id = void 0
     console.log([isComplete_list.length, isComplete, fetch_count]);
     if (isComplete) {
       clearIntervals(charger_moving_intervals);
-      console.log(`Charger has completed the move to spot ${spot}`);
+      console.log(`Charger has completed the move to spot ${spot},call${func_count}`);
       return true; // 返回完成狀態
     }
     return false; // 返回未完成狀態
