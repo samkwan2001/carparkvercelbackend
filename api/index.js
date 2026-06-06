@@ -161,7 +161,7 @@ function reload_admin(_id = void 0) {
 }
 let clients = [];
 // 1. 客户端获取 Hoster 的 Offer，同时上报自己的存在
-app.get('/api/get-room', async (req, res) => {
+app.get('/get-room', async (req, res) => {
   const { roomId, clientId } = req.query;
   if (!roomId || !clientId) return res.status(400).json({ error: 'Missing parameters' });
 
@@ -183,7 +183,7 @@ app.get('/api/get-room', async (req, res) => {
 });
 
 // 2. 客户端提交自己的 Answer 和 ICE
-app.post('/api/submit-client-signal', async (req, res) => {
+app.post('/submit-client-signal', async (req, res) => {
   console.log(req.url.split("?time=")[1], req.body.answer?.type || req.body.candidate?.usernameFragment)
   const { roomId, clientId, answer, candidate } = req.body;
   const collection = rooms;
@@ -207,7 +207,7 @@ app.post('/api/submit-client-signal', async (req, res) => {
   res.json({ success: true });
 });
 
-app.post('/api/register-client', async (req, res) => {
+app.post('/register-client', async (req, res) => {
   const { roomId, clientId } = req.body;
   if (!roomId || !clientId) return res.status(400).json({ error: 'Missing parameters' });
 
