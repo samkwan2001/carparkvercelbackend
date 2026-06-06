@@ -34,8 +34,6 @@ const collectionName = is_wall_c ? 'carparkcollection-wall-c' : 'carparkcollecti
 
 let db;
 let collection;
-let webrtc_db;
-let rooms;
 
 const FirstTime = 0;
 const InQueue = 1;
@@ -143,8 +141,6 @@ async function connectToDatabase() {
     const client = await MongoClient.connect(url, { useUnifiedTopology: true });
     db = client.db(dbName);
     collection = db.collection(collectionName);
-    webrtc_db = client.db('webrtc_db');
-    rooms = webrtc_db.collection('rooms');
     console.log("成功連接到 MongoDB!");
   } catch (error) {
     console.error("連接到 MongoDB 失敗:", error);
@@ -160,74 +156,6 @@ function reload_admin(_id = void 0) {
   }
 }
 let clients = [];
-// 1. 客户端获取 Hoster 的 Offer，同时上报自己的存在
-app.get('/api/get-room', async (req, res) => {
-  const { roomId, clientId } = req.query;
-  if (!roomId || !clientId) return res.status(400).json({ error: 'Missing parameters' });
-
-  const room = await rooms.findOne({ _id: roomId });
-  if (!room) return res.status(404).json({ error: 'Room not found' });
-
-  // 【Choose One 核心逻辑】：如果你想在后端限制只允许特定 Client 进来
-  // if (room.allowedClientId && room.allowedClientId !== clientId) {
-  //     return res.status(403).json({ error: '你不是被选中的客户端' });
-  // }
-
-  // 返回公用的 Offer，以及专门定向给这个客户端的后端 ICE 候选
-  const clientData = room.clients?.[clientId] || {};
-  res.json({
-    // 优先返回专属 offer
-    offer: clientData.offer,
-    backendCandidates: clientData.backendCandidatesForThisClient || []
-  });
-});
-
-// 2. 客户端提交自己的 Answer 和 ICE
-app.post('/api/submit-client-signal', async (req, res) => {
-  console.log(req.url.split("?time=")[1], req.body.answer?.type || req.body.candidate?.usernameFragment)
-  const { roomId, clientId, answer, candidate } = req.body;
-  const collection = rooms;
-
-  const updateQuery = {};
-
-  // 使用 MongoDB 的 $set 动态更新指定 clientId 的嵌套对象
-  if (answer) {
-    updateQuery[`clients.${clientId}.answer`] = answer;
-    updateQuery[`clients.${clientId}.status`] = "answered";
-  }
-
-  const updatePayload = { $set: updateQuery };
-
-  if (candidate) {
-    // 动态追加该客户端的 ICE 到它自己的数组里
-    updatePayload.$push = { [`clients.${clientId}.clientCandidates`]: candidate };
-  }
-
-  await collection.updateOne({ _id: roomId }, updatePayload);
-  res.json({ success: true });
-});
-
-app.post('/api/register-client', async (req, res) => {
-  const { roomId, clientId } = req.body;
-  if (!roomId || !clientId) return res.status(400).json({ error: 'Missing parameters' });
-
-  const collection = rooms;
-
-  // 在指定 roomId 下的 clients 字典中，为该 clientId 动态初始化一个基础空结构
-  // 这会直接触发后端的 MongoDB .watch() 变更流
-  await collection.updateOne(
-    { _id: roomId },
-    { 
-      $set: { 
-        [`clients.${clientId}.status`]: "registered",
-        [`clients.${clientId}.clientCandidates`]: [],
-        [`clients.${clientId}.backendCandidatesForThisClient`]: []
-      } 
-    }
-  );
-
-  res.json({ success: true });
-});
 function reload_all_client(exception = void 0, _id = void 0) {
   console.log("rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr");
   let count = 0;
