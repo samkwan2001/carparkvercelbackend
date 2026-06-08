@@ -143,8 +143,8 @@ async function connectToDatabase() {
     const client = await MongoClient.connect(url, { useUnifiedTopology: true });
     db = client.db(dbName);
     collection = db.collection(collectionName);
-    webrtc_db = client.db('webrtc_db');
-    rooms = webrtc_db.collection('rooms');
+    // webrtc_db = client.db('webrtc_db');
+    // rooms = webrtc_db.collection('rooms');
     fs.writeFile('.count.json', String("成功連接到 MongoDB!"), 'utf8', () => { });
     console.log("成功連接到 MongoDB!");
   } catch (error) {
