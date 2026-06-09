@@ -34,8 +34,6 @@ const collectionName = is_wall_c ? 'carparkcollection-wall-c' : 'carparkcollecti
 
 let db;
 let collection;
-let webrtc_db;
-let rooms;
 
 const FirstTime = 0;
 const InQueue = 1;
@@ -143,21 +141,10 @@ async function connectToDatabase() {
     const client = await MongoClient.connect(url, { useUnifiedTopology: true });
     db = client.db(dbName);
     collection = db.collection(collectionName);
-    // webrtc_db = client.db('webrtc_db');
-    // rooms = webrtc_db.collection('rooms');
-    fs.writeFile('.count.json', String("成功連接到 MongoDB!"), 'utf8', () => { });
     console.log("成功連接到 MongoDB!");
   } catch (error) {
     console.error("連接到 MongoDB 失敗:", error);
-    fs.writeFile('.count.json', String("連接到 MongoDB 失敗:"), 'utf8', () => {
-      fs.appendFile('.count.json', String(error.message), 'utf8', () => {
-        fs.appendFile('.count.json', String(error), 'utf8', () => {
-          app.get("/error",async (req, res) => {res.json(error)})
-          // process.exit(1);
-        });
-      });
-    });
-    
+    process.exit(1);
   }
 }
 
@@ -169,76 +156,6 @@ function reload_admin(_id = void 0) {
   }
 }
 let clients = [];
-/*
-// 1. 客户端获取 Hoster 的 Offer，同时上报自己的存在
-app.get('/get_room', async (req, res) => {
-  const { roomId, clientId } = req.query;
-  if (!roomId || !clientId) return res.status(400).json({ error: 'Missing parameters' });
-
-  const room = await rooms.findOne({ _id: roomId });
-  if (!room) return res.status(404).json({ error: 'Room not found' });
-
-  // 【Choose One 核心逻辑】：如果你想在后端限制只允许特定 Client 进来
-  // if (room.allowedClientId && room.allowedClientId !== clientId) {
-  //     return res.status(403).json({ error: '你不是被选中的客户端' });
-  // }
-
-  // 返回公用的 Offer，以及专门定向给这个客户端的后端 ICE 候选
-  const clientData = room.clients?.[clientId] || {};
-  res.json({
-    // 优先返回专属 offer
-    offer: clientData.offer,
-    backendCandidates: clientData.backendCandidatesForThisClient || []
-  });
-});
-
-// 2. 客户端提交自己的 Answer 和 ICE
-app.post('/submit_client_signal', async (req, res) => {
-  console.log(req.url.split("?time=")[1], req.body.answer?.type || req.body.candidate?.usernameFragment)
-  const { roomId, clientId, answer, candidate } = req.body;
-  const collection = rooms;
-
-  const updateQuery = {};
-
-  // 使用 MongoDB 的 $set 动态更新指定 clientId 的嵌套对象
-  if (answer) {
-    updateQuery[`clients.${clientId}.answer`] = answer;
-    updateQuery[`clients.${clientId}.status`] = "answered";
-  }
-
-  const updatePayload = { $set: updateQuery };
-
-  if (candidate) {
-    // 动态追加该客户端的 ICE 到它自己的数组里
-    updatePayload.$push = { [`clients.${clientId}.clientCandidates`]: candidate };
-  }
-
-  await collection.updateOne({ _id: roomId }, updatePayload);
-  res.json({ success: true });
-});
-
-app.post('/register_client', async (req, res) => {
-  const { roomId, clientId } = req.body;
-  if (!roomId || !clientId) return res.status(400).json({ error: 'Missing parameters' });
-
-  const collection = rooms;
-
-  // 在指定 roomId 下的 clients 字典中，为该 clientId 动态初始化一个基础空结构
-  // 这会直接触发后端的 MongoDB .watch() 变更流
-  await collection.updateOne(
-    { _id: roomId },
-    { 
-      $set: { 
-        [`clients.${clientId}.status`]: "registered",
-        [`clients.${clientId}.clientCandidates`]: [],
-        [`clients.${clientId}.backendCandidatesForThisClient`]: []
-      } 
-    }
-  );
-
-  res.json({ success: true });
-});
-*/
 function reload_all_client(exception = void 0, _id = void 0) {
   console.log("rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr");
   let count = 0;
@@ -579,7 +496,7 @@ park.state_pack_to_client = () => {
 
   const maxKey = maxEntry[0];
   const maxValue = maxEntry[1];
-  const last_index_loc_comment_cb_time = {}
+  const last_index_loc_comment_cb_time={}
   last_index_loc_comment_cb_time[maxKey] = maxValue;
   const output = JSON.stringify({
     is_available: park.is_available,
@@ -607,7 +524,7 @@ function send_park_is_available(...args) {
   // if (m) send_to_client("park", park.state_pack_to_client());
   console.log(`send_to_client ${m}`, args);
 }
-app.get("/res_connection", (req, res) => { res.json(park.res_connection); })
+app.get("/res_connection",(req, res) => {res.json(park.res_connection);})
 let _5min_test = void 0;
 let index_pub_event_close_Timeout = setTimeout(() => { });
 let index_pub_event_comment_interval = setInterval(() => { })
@@ -658,7 +575,7 @@ app.get("/index_pub/event", (req, res) => {
     console.log("reconnect /index_pub/event", this_async_id);
     park.res_connection[this_async_id] = null;
     res.write("event: reconnect\n");
-    res.write("data:" + String(0) + "\n\n", (e) => { console.log("e", e); });
+    res.write("data:" + String(0) + "\n\n", (e) => { console.log("e", e);});
     res.end();
   }, 3 * 60 * 1000, this_async_id);
   req.on("close", () => {
@@ -682,9 +599,9 @@ app.get("/index_pub/event", (req, res) => {
     console.log("/index_pub/event close");
   });
 
-  send_to_index_loc(last_event_data["event"], last_event_data["data"], 602)
+  send_to_index_loc(last_event_data["event"], last_event_data["data"],602)
 })
-function send_to_index_loc(event, data, line = 0) {
+function send_to_index_loc(event, data,line=0) {
   if (park.index_loc_res !== void 0 && !park.index_loc_res.destroyed) {
     park.index_loc_res.write("event: " + event + "\n", send_park_is_available);
     park.index_loc_res.write("data:" + data + "\n\n", send_park_is_available);
@@ -1221,10 +1138,10 @@ app.post("/cancal", async (req, resp) => {
   resp.send(result);
   queue_shift();
 });
-let queue_shift_run_count = 0;
+let queue_shift_run_count=0;
 // 開始充電的路由（更新 start time）
 async function queue_shift(exception = void 0) {
-  console.log("queue_shiftqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq", queue_shift_run_count);
+  console.log("queue_shiftqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",queue_shift_run_count);
   const log = true;
   clearTimeout(park.timer);
   var queue_Interval = null;
@@ -1284,7 +1201,7 @@ async function queue_shift(exception = void 0) {
   }
   last_queue_shift = Date.now()
   retry_reload_interval = setInterval(retry_reload, 500)
-  const status = await call_charger_move_to(user_who_need_to_charge["Parking Space Num"], user_who_need_to_charge["_id"], queue_shift_run_count)  // TODO control fung's machine
+  const status = await call_charger_move_to(user_who_need_to_charge["Parking Space Num"], user_who_need_to_charge["_id"],queue_shift_run_count)  // TODO control fung's machine
   console.log("process returned to queue_shift and user_who_need_to_charge.charge duration:", user_who_need_to_charge["charge duration"]);
   if (there_are_queuing || user_who_need_to_charge["charge duration"] !== null) {//!---------------------------------------
     let skip = false;
@@ -1311,7 +1228,7 @@ async function queue_shift(exception = void 0) {
   }
 }
 let charger_moving_intervals = [setInterval(() => { }, 10)]
-async function call_charger_move_to(spot, _id = void 0, func_count) {//added ,_id = void 0
+async function call_charger_move_to(spot, _id = void 0,func_count) {//added ,_id = void 0
   console.log(`Moving to spot ${spot}`);
   let command = "calibrate";
   if (spot != 0) command = `move?spot=${spot}`;
@@ -1320,7 +1237,7 @@ async function call_charger_move_to(spot, _id = void 0, func_count) {//added ,_i
   // const result = await fetch(`http://${charger_IPV4}/control/${command}`);
   // console.log("result",result);
   let index_loc_msg_vaild_time = Date.now();
-  send_to_index_loc("call_charger_move_to", spot, 1240);
+  send_to_index_loc("call_charger_move_to", spot,1240);
   clearIntervals(charger_moving_intervals);
   // clearTimeout(charger_moving_interval);
   // let need_wait=0;
@@ -1343,11 +1260,11 @@ async function call_charger_move_to(spot, _id = void 0, func_count) {//added ,_i
             ${typeof park.charger_is_moving_to_spot}==${typeof spot}
             `);
           index_loc_msg_vaild_time = Date.now();
-          send_to_index_loc("call_charger_move_to", spot, 1263);
+          send_to_index_loc("call_charger_move_to", spot,1263);
         }
       } else if (Date.now() - start > 17000) {
         start = Date.now();
-        send_to_index_loc("call_charger_move_to", spot, 1267);
+        send_to_index_loc("call_charger_move_to", spot,1267);
       } else {
         console.log({ "completed": { "index_loc_msg_rev_time": park.index_loc_msg_rev_time } })
       };
