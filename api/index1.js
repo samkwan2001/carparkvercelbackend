@@ -166,7 +166,7 @@ app.get('/api/get-room', async (req, res) => {
   const { roomId, clientId } = req.query;
   if (!roomId || !clientId) return res.status(400).json({ error: 'Missing parameters' });
 
-  const room = await rooms.findOne({ _id: roomId });
+  const room = await rooms.find({ _id: new ObjectId(roomId) });
   if (!room) return res.status(404).json({ error: 'Room not found' });
 
   // 【Choose One 核心逻辑】：如果你想在后端限制只允许特定 Client 进来
@@ -204,7 +204,7 @@ app.post('/api/submit-client-signal', async (req, res) => {
     updatePayload.$push = { [`clients.${clientId}.clientCandidates`]: candidate };
   }
 
-  await collection.updateOne({ _id: roomId }, updatePayload);
+  await collection.updateOne({ _id: new ObjectId(roomId) }, updatePayload);
   res.json({ success: true });
 });
 
@@ -217,7 +217,7 @@ app.post('/api/register-client', async (req, res) => {
   // 在指定 roomId 下的 clients 字典中，为该 clientId 动态初始化一个基础空结构
   // 这会直接触发后端的 MongoDB .watch() 变更流
   await collection.updateOne(
-    { _id: roomId },
+    { _id: new ObjectId(roomId) },
     { 
       $set: { 
         [`clients.${clientId}.status`]: "registered",
